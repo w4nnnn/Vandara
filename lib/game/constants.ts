@@ -289,18 +289,12 @@ export const SCAVENGE_EVENTS: ScavengeEvent[] = [
 
 // ─── STREAK BONUSES ──────────────────────────────────────────────
 
-export const STREAK_THRESHOLDS = [
-  { streak: 3, lootBonus: 0.10, eventBonus: 0.05 },
-  { streak: 5, lootBonus: 0.20, eventBonus: 0.10 },
-  { streak: 10, lootBonus: 0.35, eventBonus: 0.15 },
-] as const
-
+// streak now grants a flat 0.5% loot bonus per consecutive action
+// event bonus remains fixed small (+0.02 per streak for flavor)
 export function getStreakBonus(streak: number): { lootBonus: number; eventBonus: number } {
-  let best = { lootBonus: 0, eventBonus: 0 }
-  for (const t of STREAK_THRESHOLDS) {
-    if (streak >= t.streak) best = { lootBonus: t.lootBonus, eventBonus: t.eventBonus }
-  }
-  return best
+  const lootBonus = streak * 0.005 // 0.5% per streak
+  const eventBonus = streak * 0.02 // 2% per streak (optional)
+  return { lootBonus, eventBonus }
 }
 
 // ─── STAMINA MULTIPLIER ─────────────────────────────────────────
