@@ -11,8 +11,11 @@ inventory — all from your browser.
 
 - **Character creation** — name your character and customize a unique
   SVG avatar with 13 options (hairstyle, clothes, face, skin, etc.)
-- **Dashboard** — view your stats with real-time regeneration timers,
-  battle stats, XP progress, and balance at a glance
+- **Immersive Game UI** — features a sticky top HUD bar displaying
+  real-time stat regeneration (Health, Energy, Nerve, Happy) and
+  location, with a mobile-friendly bottom navigation bar
+- **Dashboard** — view your battle stats, XP progress, and balance
+  at a glance
 - **Combat (PvE)** — turn-based fights against 8 NPC enemies
   (Pickpocket → Crime Boss) with 4 actions: Attack, Heavy Attack,
   Defend, and Flee. Earn money, XP, and item drops from victories
@@ -85,7 +88,7 @@ app/
   page.tsx                  # Landing page (redirects)
   create/page.tsx           # Character creation
   (game)/
-    layout.tsx              # Game shell with sidebar
+    layout.tsx              # Game shell with top HUD & bottom nav
     dashboard/              # Stats overview + regen timers
     combat/                 # Turn-based PvE combat
     gym/                    # Train battle stats
