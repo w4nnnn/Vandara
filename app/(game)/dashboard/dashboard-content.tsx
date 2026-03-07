@@ -205,35 +205,6 @@ export default function DashboardContent({ player }: { player: Player }) {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            {[
-              { label: 'Travel', icon: PlaneIcon, href: '/travel', desc: 'Change location' },
-              { label: 'NPC', icon: UsersIcon, href: '/npc', desc: 'Dark Alley' },
-              { label: 'Gym', icon: DumbbellIcon, href: '/gym', desc: 'Gym District' },
-              { label: 'Jobs', icon: BriefcaseIcon, href: '/jobs', desc: 'Business District' },
-              { label: 'Inventory', icon: BackpackIcon, href: '/inventory', desc: 'Anywhere' },
-            ].map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="flex flex-col items-center gap-1 rounded-lg border p-4 text-center hover:border-primary/50 hover:bg-accent transition-colors"
-              >
-                <action.icon className="size-6 text-primary" />
-                <span className="text-sm font-medium">{action.label}</span>
-                <span className="text-[10px] text-muted-foreground">
-                  {action.desc}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

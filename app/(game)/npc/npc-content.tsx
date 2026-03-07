@@ -13,7 +13,9 @@ import {
     ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
     UsersIcon, ArrowLeftIcon,
 } from 'lucide-react'
-import { NPC_ENEMIES } from '@/lib/game/constants'
+import { useEffect } from 'react'
+import { getCurrentNpcSeed, generateDailyNpcs, type GeneratedNpc } from '@/lib/game/npc-generator'
+import AvatarComponent from '@/avataaars-assets'
 import { useCombat } from './use-combat'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -77,6 +79,21 @@ export default function CombatContent({ player }: { player: Player }) {
     const [phase, setPhase] = useState<CombatPhase>('select_npc')
     const [error, setError] = useState<string | null>(null)
 
+    // Dynamic NPCs State
+    const [npcs, setNpcs] = useState<GeneratedNpc[]>([])
+    const [countdownMs, setCountdownMs] = useState<number>(0)
+
+    useEffect(() => {
+        const tick = () => {
+            const { seed, nextRotationTime } = getCurrentNpcSeed()
+            setNpcs(generateDailyNpcs(seed, 5, player.level))
+            setCountdownMs(Math.max(0, nextRotationTime - Date.now()))
+        }
+        tick()
+        const interval = setInterval(tick, 1000)
+        return () => clearInterval(interval)
+    }, [player.level])
+
     // NPC interaction state
     const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null)
     const [chatStep, setChatStep] = useState(0)
@@ -102,7 +119,7 @@ export default function CombatContent({ player }: { player: Player }) {
 
     // ─── NPC Selection ─────────────────────────────────────────────
 
-    const selectedNpc = NPC_ENEMIES.find((e) => e.id === selectedNpcId)
+    const selectedNpc = npcs.find((e) => e.id === selectedNpcId)
 
     const handleSelectNpc = (npcId: string) => {
         setSelectedNpcId(npcId)
@@ -187,32 +204,48 @@ export default function CombatContent({ player }: { player: Player }) {
             {phase === 'select_npc' && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <UsersIcon className="size-5" />
-                            Orang-orang di Sekitar
-                        </CardTitle>
-                        <CardDescription>
-                            Temui NPC di gang gelap. Kamu bisa mengajak mereka ngobrol atau menantang mereka bertarung.
-                        </CardDescription>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <UsersIcon className="size-5" />
+                                    Orang-orang di Sekitar
+                                </CardTitle>
+                                <CardDescription className="mt-1">
+                                    Temui NPC di gang gelap. Kamu bisa mengajak mereka ngobrol atau bertarung.
+                                </CardDescription>
+                            </div>
+                            <Badge variant="outline" className="text-xs whitespace-nowrap bg-muted">
+                                Berganti dalam: {Math.floor(countdownMs / 60000)}m Math.floor((countdownMs % 60000) / 1000)s
+                            </Badge>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            {NPC_ENEMIES.map((npc) => {
+                            {npcs.map((npc) => {
                                 const locked = player.level < npc.level
                                 return (
                                     <div
                                         key={npc.id}
-                                        className={`flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${locked ? 'opacity-50' : 'hover:border-primary/50'
+                                        className={`flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${locked ? 'opacity-50' : 'hover:border-primary/50'
                                             }`}
                                     >
-                                        <div className="flex-1 space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold">{npc.label}</h3>
-                                                <Badge variant={locked ? 'secondary' : 'outline'} className="text-xs">
-                                                    Lv.{npc.level}
-                                                </Badge>
+                                        <div className="flex flex-1 items-center gap-4">
+                                            <div className="flex shrink-0 items-center justify-center rounded-full bg-muted overflow-hidden size-14 border">
+                                                <AvatarComponent
+                                                    avatarStyle="Circle"
+                                                    {...(npc.avatar as any)}
+                                                    style={{ width: '100%', height: '100%' }}
+                                                />
                                             </div>
-                                            <p className="text-sm text-muted-foreground">{npc.description}</p>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-semibold">{npc.label}</h3>
+                                                    <Badge variant={locked ? 'secondary' : 'outline'} className="text-xs">
+                                                        Lv.{npc.level}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">{npc.description}</p>
+                                            </div>
                                         </div>
                                         <Button
                                             variant={locked ? 'secondary' : 'default'}
