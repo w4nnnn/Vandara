@@ -89,30 +89,39 @@ export type GeneratedNpc = {
 
 // ─── Core Functions ─────────────────────────────────────────────────
 
-const ROTATION_MINUTES = 15 // NPCs rotate every 15 minutes
+export type ActiveNpc = GeneratedNpc & { nextRotationTime: number }
 
 /**
- * Returns the current time-based seed and the next rotation timestamp.
+ * Generates the current array of active NPCs.
+ * Each NPC "slot" has its own independent rotation timer.
+ * The number of slots changes every hour.
+ * (Forcing Turbopack to recompile)
  */
-export function getCurrentNpcSeed(): { seed: number; nextRotationTime: number } {
+export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
+    const npcs: ActiveNpc[] = []
     const now = Date.now()
-    const intervalMs = ROTATION_MINUTES * 60 * 1000
-    const currentInterval = Math.floor(now / intervalMs)
-    const nextRotationTime = (currentInterval + 1) * intervalMs
-    return { seed: currentInterval, nextRotationTime }
-}
 
-/**
- * Generates an array of NPCs using the given seed and the player's level as a baseline.
- */
-export function generateDailyNpcs(seed: number, count: number, playerLevel: number): GeneratedNpc[] {
-    const npcs: GeneratedNpc[] = []
+    // Determine number of slots available for the current hour
+    const hourMs = 60 * 60 * 1000
+    const currentHour = Math.floor(now / hourMs)
+    const hourPrng = mulberry32(currentHour)
 
-    // Use a combination of the time seed and a fixed offset to ensure the sequence
-    // is exactly the same for all players with the same seed + count.
-    const prng = mulberry32(seed)
+    // Between 3 to 7 NPCs at a time
+    const count = 3 + Math.floor(hourPrng() * 5)
 
     for (let i = 0; i < count; i++) {
+        // Each slot has its own rotation duration between 3 to 15 minutes
+        const durationMinutes = 3 + Math.floor(hourPrng() * 13)
+        const slotDurationMs = durationMinutes * 60 * 1000
+
+        const currentSlotInterval = Math.floor(now / slotDurationMs)
+        const nextRotationTime = (currentSlotInterval + 1) * slotDurationMs
+
+        // Seed for this specific NPC at this specific time interval
+        // Incorporate both the interval step and the slot index
+        const slotSeed = currentSlotInterval * 1000 + i
+        const prng = mulberry32(slotSeed)
+
         // Generate base attributes
         const firstName = pickRandom(FIRST_NAMES, prng)
         const lastName = pickRandom(LAST_NAMES, prng)
@@ -122,7 +131,7 @@ export function generateDailyNpcs(seed: number, count: number, playerLevel: numb
         let npcLevel = playerLevel + Math.floor(prng() * 8) - 2
         if (npcLevel < 1) npcLevel = 1
 
-        const id = `npc_${seed}_${i}`
+        const id = `npc_${slotSeed}`
 
         // Calculate stats based on level
         // A base stat pool that scales with level
@@ -185,7 +194,8 @@ export function generateDailyNpcs(seed: number, count: number, playerLevel: numb
                 lines,
                 farewell: pickRandom(FAREWELLS, prng),
             },
-            avatar
+            avatar,
+            nextRotationTime,
         })
     }
 

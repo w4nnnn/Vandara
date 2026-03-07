@@ -5,7 +5,7 @@ import { players, combatLogs, playerItems } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { getPlayer } from './character'
 import { xpForLevel, ITEMS } from '@/lib/game/constants'
-import { getCurrentNpcSeed, generateDailyNpcs } from '@/lib/game/npc-generator'
+import { getActiveNpcs } from '@/lib/game/npc-generator'
 
 function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -27,14 +27,9 @@ export async function initiateCombat(enemyId: string) {
         return { error: 'You need to be at the Dark Alley to fight.' }
     }
 
-    const { seed } = getCurrentNpcSeed()
-    const npcs = generateDailyNpcs(seed, 5, player.level)
+    const npcs = getActiveNpcs(player.level)
     const enemy = npcs.find((e) => e.id === enemyId)
     if (!enemy) return { error: 'Musuh tidak valid atau sudah kadaluarsa (ganti waktu)' }
-
-    if (player.level < enemy.level) {
-        return { error: `You need level ${enemy.level} to fight this enemy.` }
-    }
 
     if (player.nerve < enemy.nerveCost) {
         return { error: 'Not enough nerve.' }
@@ -90,8 +85,7 @@ export async function finishCombat(
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
 
-    const { seed } = getCurrentNpcSeed()
-    const npcs = generateDailyNpcs(seed, 5, player.level)
+    const npcs = getActiveNpcs(player.level)
     const enemy = npcs.find((e) => e.id === enemyId)
     if (!enemy) return { error: 'Musuh tidak valid atau sudah kadaluarsa' }
 

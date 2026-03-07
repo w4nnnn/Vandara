@@ -199,7 +199,7 @@ export default function GameLayoutClient({
 
       {/* ═══ BOTTOM NAV BAR ═══ */}
       <nav className="fixed bottom-0 inset-x-0 z-50 border-t bg-zinc-900/95 backdrop-blur-sm text-white safe-area-pb">
-        <div className="mx-auto flex max-w-2xl items-center justify-around">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-1 py-1">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href
             const requiredLoc = item.activity ? ACTIVITY_LOCATIONS[item.activity] : null
@@ -211,15 +211,15 @@ export default function GameLayoutClient({
               <Link
                 key={item.href}
                 href={isLocked ? '/travel' : item.href}
-                className={`flex flex-col items-center gap-0.5 py-2 px-2 text-[10px] sm:text-xs transition-colors ${isActive
-                  ? 'text-primary'
+                className={`flex flex-1 flex-col items-center justify-center gap-1 h-14 rounded-xl text-[10px] sm:text-xs transition-colors ${isActive
+                  ? 'text-white bg-white/15'
                   : isLocked
-                    ? 'text-white/25'
-                    : 'text-white/60 hover:text-white'
+                    ? 'text-white/20'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
               >
-                <item.icon className={`size-5 ${isActive ? 'text-primary' : ''}`} />
-                <span>{item.label}</span>
+                <item.icon className="size-5" />
+                <span className="truncate w-full text-center px-0.5">{item.label}</span>
               </Link>
             )
           })}

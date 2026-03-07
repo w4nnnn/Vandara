@@ -13,8 +13,9 @@ import {
     ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
     UsersIcon, ArrowLeftIcon,
 } from 'lucide-react'
+// Trigger HMR
 import { useEffect } from 'react'
-import { getCurrentNpcSeed, generateDailyNpcs, type GeneratedNpc } from '@/lib/game/npc-generator'
+import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
 import AvatarComponent from '@/avataaars-assets'
 import { useCombat } from './use-combat'
 
@@ -80,17 +81,16 @@ export default function CombatContent({ player }: { player: Player }) {
     const [error, setError] = useState<string | null>(null)
 
     // Dynamic NPCs State
-    const [npcs, setNpcs] = useState<GeneratedNpc[]>([])
-    const [countdownMs, setCountdownMs] = useState<number>(0)
+    const [npcs, setNpcs] = useState<ActiveNpc[]>([])
+    const [, setTick] = useState(0) // Used to force re-render for countdowns
 
     useEffect(() => {
-        const tick = () => {
-            const { seed, nextRotationTime } = getCurrentNpcSeed()
-            setNpcs(generateDailyNpcs(seed, 5, player.level))
-            setCountdownMs(Math.max(0, nextRotationTime - Date.now()))
+        const updateNpcs = () => {
+            setNpcs(getActiveNpcs(player.level))
+            setTick(t => t + 1)
         }
-        tick()
-        const interval = setInterval(tick, 1000)
+        updateNpcs()
+        const interval = setInterval(updateNpcs, 1000)
         return () => clearInterval(interval)
     }, [player.level])
 
@@ -214,20 +214,19 @@ export default function CombatContent({ player }: { player: Player }) {
                                     Temui NPC di gang gelap. Kamu bisa mengajak mereka ngobrol atau bertarung.
                                 </CardDescription>
                             </div>
-                            <Badge variant="outline" className="text-xs whitespace-nowrap bg-muted">
-                                Berganti dalam: {Math.floor(countdownMs / 60000)}m Math.floor((countdownMs % 60000) / 1000)s
-                            </Badge>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {npcs.map((npc) => {
-                                const locked = player.level < npc.level
+                                const msLeft = Math.max(0, npc.nextRotationTime - Date.now())
+                                const minutes = Math.floor(msLeft / 60000)
+                                const seconds = Math.floor((msLeft % 60000) / 1000)
+
                                 return (
                                     <div
                                         key={npc.id}
-                                        className={`flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${locked ? 'opacity-50' : 'hover:border-primary/50'
-                                            }`}
+                                        className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between hover:border-primary/50"
                                     >
                                         <div className="flex flex-1 items-center gap-4">
                                             <div className="flex shrink-0 items-center justify-center rounded-full bg-muted overflow-hidden size-14 border">
@@ -240,21 +239,24 @@ export default function CombatContent({ player }: { player: Player }) {
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-semibold">{npc.label}</h3>
-                                                    <Badge variant={locked ? 'secondary' : 'outline'} className="text-xs">
+                                                    <Badge variant="outline" className="text-xs">
                                                         Lv.{npc.level}
+                                                    </Badge>
+                                                    <Badge variant="secondary" className="text-[10px] ml-auto sm:ml-2">
+                                                        Reset: {minutes}m {seconds}s
                                                     </Badge>
                                                 </div>
                                                 <p className="text-sm text-muted-foreground">{npc.description}</p>
                                             </div>
                                         </div>
                                         <Button
-                                            variant={locked ? 'secondary' : 'default'}
+                                            variant="default"
                                             size="sm"
-                                            disabled={locked || isPending}
+                                            disabled={isPending}
                                             onClick={() => handleSelectNpc(npc.id)}
                                             className="shrink-0"
                                         >
-                                            {locked ? `Butuh Lv.${npc.level}` : 'Temui'}
+                                            Temui
                                         </Button>
                                     </div>
                                 )
