@@ -47,6 +47,10 @@ export async function work() {
     return { error: 'You are in the hospital and cannot work right now.' }
   }
 
+  if (player.currentLocation !== 'business_district') {
+    return { error: 'You need to be at the Business District to work.' }
+  }
+
   if (!player.jobId) return { error: 'You don\'t have a job' }
 
   const job = JOBS.find((j) => j.id === player.jobId)

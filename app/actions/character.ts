@@ -112,6 +112,25 @@ export async function getPlayer() {
       .where(eq(players.id, player.id))
   }
 
+  // Auto-complete travel if timer expired
+  let currentLocation = player.currentLocation
+  let travelingTo = player.travelingTo
+  let travelingUntil = player.travelingUntil
+  if (travelingTo && travelingUntil && now >= travelingUntil) {
+    currentLocation = travelingTo
+    travelingTo = null
+    travelingUntil = null
+    await db
+      .update(players)
+      .set({
+        currentLocation,
+        travelingTo: null,
+        travelingUntil: null,
+        updatedAt: now,
+      })
+      .where(eq(players.id, player.id))
+  }
+
   // Apply stat regeneration based on elapsed time
   const regen = applyRegen({ ...player, updatedAt: isHospitalized ? now : player.updatedAt })
   if (regen.changed) {
@@ -139,6 +158,9 @@ export async function getPlayer() {
     happy: regen.happy,
     isHospitalized,
     hospitalUntil,
+    currentLocation,
+    travelingTo,
+    travelingUntil,
     avatar,
   }
 }

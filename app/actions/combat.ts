@@ -22,6 +22,10 @@ export async function initiateCombat(enemyId: string) {
         return { error: 'You are in the hospital and cannot fight right now.' }
     }
 
+    if (player.currentLocation !== 'dark_alley') {
+        return { error: 'You need to be at the Dark Alley to fight.' }
+    }
+
     const enemy = NPC_ENEMIES.find((e) => e.id === enemyId)
     if (!enemy) return { error: 'Invalid enemy' }
 

@@ -264,3 +264,73 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     description: 'The kingpin. Only the strongest dare challenge him.',
   },
 ]
+
+// ─── LOCATIONS ────────────────────────────────────────────────────
+
+export type LocationId = 'city_center' | 'gym_district' | 'business_district' | 'dark_alley' | 'hospital'
+
+export interface GameLocation {
+  id: LocationId
+  label: string
+  description: string
+  icon: string        // emoji for simple display
+  facilities: string[]  // what you can do here
+}
+
+export const LOCATIONS: Record<LocationId, GameLocation> = {
+  city_center: {
+    id: 'city_center',
+    label: 'City Center',
+    description: 'The heart of the city. A safe starting point.',
+    icon: '🏙️',
+    facilities: ['Dashboard', 'Inventory'],
+  },
+  gym_district: {
+    id: 'gym_district',
+    label: 'Gym District',
+    description: 'A district full of training facilities and dojos.',
+    icon: '💪',
+    facilities: ['Gym'],
+  },
+  business_district: {
+    id: 'business_district',
+    label: 'Business District',
+    description: 'Corporate offices and job opportunities.',
+    icon: '🏢',
+    facilities: ['Jobs'],
+  },
+  dark_alley: {
+    id: 'dark_alley',
+    label: 'Dark Alley',
+    description: 'A dangerous part of town. Watch your back.',
+    icon: '🌑',
+    facilities: ['Combat'],
+  },
+  hospital: {
+    id: 'hospital',
+    label: 'Hospital',
+    description: 'The city hospital. Come here to recover.',
+    icon: '🏥',
+    facilities: ['Hospital'],
+  },
+}
+
+export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[]
+
+// Travel times between locations (in seconds)
+// Symmetric: time from A→B = time from B→A
+export const TRAVEL_TIMES: Record<LocationId, Record<LocationId, number>> = {
+  city_center: { city_center: 0, gym_district: 15, business_district: 20, dark_alley: 30, hospital: 25 },
+  gym_district: { city_center: 15, gym_district: 0, business_district: 25, dark_alley: 35, hospital: 30 },
+  business_district: { city_center: 20, gym_district: 25, business_district: 0, dark_alley: 40, hospital: 20 },
+  dark_alley: { city_center: 30, gym_district: 35, business_district: 40, dark_alley: 0, hospital: 45 },
+  hospital: { city_center: 25, gym_district: 30, business_district: 20, dark_alley: 45, hospital: 0 },
+}
+
+// Which location is required for each activity
+export const ACTIVITY_LOCATIONS: Record<string, LocationId> = {
+  gym: 'gym_district',
+  jobs: 'business_district',
+  combat: 'dark_alley',
+  hospital: 'hospital',
+}

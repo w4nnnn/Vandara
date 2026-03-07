@@ -16,8 +16,11 @@ import {
   BriefcaseIcon,
   BackpackIcon,
   HeartPulseIcon,
+  PlaneIcon,
+  MapPinIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { LOCATIONS, type LocationId } from '@/lib/game/constants'
 
 type Player = {
   id: number
@@ -39,6 +42,8 @@ type Player = {
   dexterity: number
   isHospitalized: boolean
   hospitalUntil: Date | null
+  currentLocation: string
+  travelingTo: string | null
   updatedAt: Date
   avatar?: {
     avatarStyle: string
@@ -134,6 +139,10 @@ export default function DashboardContent({ player }: { player: Player }) {
             <p className="text-sm text-muted-foreground">
               Level {player.level}
             </p>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPinIcon className="size-3" />
+              {LOCATIONS[player.currentLocation as LocationId]?.label ?? player.currentLocation}
+            </p>
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>XP</span>
@@ -201,12 +210,13 @@ export default function DashboardContent({ player }: { player: Player }) {
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
-              { label: 'Combat', icon: SwordsIcon, href: '/combat', desc: 'Fight enemies' },
-              { label: 'Gym', icon: DumbbellIcon, href: '/gym', desc: 'Train your stats' },
-              { label: 'Jobs', icon: BriefcaseIcon, href: '/jobs', desc: 'Steady income' },
-              { label: 'Inventory', icon: BackpackIcon, href: '/inventory', desc: 'Your items' },
+              { label: 'Travel', icon: PlaneIcon, href: '/travel', desc: 'Change location' },
+              { label: 'Combat', icon: SwordsIcon, href: '/combat', desc: 'Dark Alley' },
+              { label: 'Gym', icon: DumbbellIcon, href: '/gym', desc: 'Gym District' },
+              { label: 'Jobs', icon: BriefcaseIcon, href: '/jobs', desc: 'Business District' },
+              { label: 'Inventory', icon: BackpackIcon, href: '/inventory', desc: 'Anywhere' },
             ].map((action) => (
               <Link
                 key={action.label}

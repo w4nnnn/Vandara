@@ -30,13 +30,17 @@ import {
   PlaneIcon,
   LockIcon,
   HeartPulseIcon,
+  MapPinIcon,
 } from 'lucide-react'
+import { LOCATIONS, ACTIVITY_LOCATIONS, type LocationId } from '@/lib/game/constants'
 
 type Player = {
   id: number
   name: string
   level: number
   money: number | bigint
+  currentLocation: string
+  travelingTo: string | null
   avatar?: {
     avatarStyle: string
     topType: string
@@ -60,49 +64,43 @@ const NAV_ITEMS = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboardIcon,
-    enabled: true,
-  },
-  {
-    label: 'Combat',
-    href: '/combat',
-    icon: SwordsIcon,
-    enabled: true,
-  },
-  {
-    label: 'Crimes',
-    href: '/crimes',
-    icon: SwordIcon,
-    enabled: false,
-  },
-  {
-    label: 'Gym',
-    href: '/gym',
-    icon: DumbbellIcon,
-    enabled: true,
-  },
-  {
-    label: 'Inventory',
-    href: '/inventory',
-    icon: BackpackIcon,
-    enabled: true,
-  },
-  {
-    label: 'Jobs',
-    href: '/jobs',
-    icon: BriefcaseIcon,
-    enabled: true,
-  },
-  {
-    label: 'Hospital',
-    href: '/hospital',
-    icon: HeartPulseIcon,
-    enabled: true,
+    activity: null, // available everywhere
   },
   {
     label: 'Travel',
     href: '/travel',
     icon: PlaneIcon,
-    enabled: false,
+    activity: null, // available everywhere
+  },
+  {
+    label: 'Combat',
+    href: '/combat',
+    icon: SwordsIcon,
+    activity: 'combat' as const,
+  },
+  {
+    label: 'Gym',
+    href: '/gym',
+    icon: DumbbellIcon,
+    activity: 'gym' as const,
+  },
+  {
+    label: 'Jobs',
+    href: '/jobs',
+    icon: BriefcaseIcon,
+    activity: 'jobs' as const,
+  },
+  {
+    label: 'Hospital',
+    href: '/hospital',
+    icon: HeartPulseIcon,
+    activity: 'hospital' as const,
+  },
+  {
+    label: 'Inventory',
+    href: '/inventory',
+    icon: BackpackIcon,
+    activity: null, // available everywhere
   },
 ]
 
@@ -147,6 +145,13 @@ export default function GameLayoutClient({
                 <p className="text-xs text-muted-foreground">
                   Level {player.level}
                 </p>
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPinIcon className="size-3" />
+                  {player.travelingTo
+                    ? `Traveling to ${LOCATIONS[player.travelingTo as LocationId]?.label ?? player.travelingTo}...`
+                    : (LOCATIONS[player.currentLocation as LocationId]?.label ?? player.currentLocation)
+                  }
+                </p>
               </div>
             </div>
           </SidebarHeader>
@@ -158,31 +163,41 @@ export default function GameLayoutClient({
               <SidebarGroupLabel>Game</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {NAV_ITEMS.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        asChild={item.enabled}
-                        isActive={pathname === item.href}
-                        disabled={!item.enabled}
-                        tooltip={
-                          !item.enabled ? 'Coming Soon' : undefined
-                        }
-                      >
-                        {item.enabled ? (
-                          <Link href={item.href}>
-                            <item.icon className="size-4" />
-                            <span>{item.label}</span>
-                          </Link>
-                        ) : (
-                          <span className="opacity-50">
-                            <item.icon className="size-4" />
-                            <span>{item.label}</span>
-                            <LockIcon className="ml-auto size-3" />
-                          </span>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {NAV_ITEMS.map((item) => {
+                    const requiredLocation = item.activity ? ACTIVITY_LOCATIONS[item.activity] : null
+                    const isAtLocation = !requiredLocation || player.currentLocation === requiredLocation
+                    const enabled = isAtLocation && !player.travelingTo
+                    const locationLabel = requiredLocation ? LOCATIONS[requiredLocation]?.label : null
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild={enabled}
+                          isActive={pathname === item.href}
+                          disabled={!enabled}
+                          tooltip={
+                            !enabled && locationLabel
+                              ? `Travel to ${locationLabel} first`
+                              : !enabled && player.travelingTo
+                                ? 'Currently traveling'
+                                : undefined
+                          }
+                        >
+                          {enabled ? (
+                            <Link href={item.href}>
+                              <item.icon className="size-4" />
+                              <span>{item.label}</span>
+                            </Link>
+                          ) : (
+                            <span className="opacity-50">
+                              <item.icon className="size-4" />
+                              <span>{item.label}</span>
+                              <LockIcon className="ml-auto size-3" />
+                            </span>
+                          )}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

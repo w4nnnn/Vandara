@@ -14,6 +14,10 @@ export async function trainGym(exerciseId: string) {
     return { error: 'You are in the hospital and cannot train right now.' }
   }
 
+  if (player.currentLocation !== 'gym_district') {
+    return { error: 'You need to be at the Gym District to train.' }
+  }
+
   const exercise = GYM_EXERCISES.find((e) => e.id === exerciseId)
   if (!exercise) return { error: 'Invalid exercise' }
 

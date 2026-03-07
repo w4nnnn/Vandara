@@ -21,6 +21,9 @@ export const players = pgTable('players', {
   jobId: varchar('job_id', { length: 50 }),
   isHospitalized: boolean('is_hospitalized').notNull().default(false),
   hospitalUntil: timestamp('hospital_until'),
+  currentLocation: varchar('current_location', { length: 50 }).notNull().default('city_center'),
+  travelingTo: varchar('traveling_to', { length: 50 }),
+  travelingUntil: timestamp('traveling_until'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
