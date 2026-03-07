@@ -3,15 +3,23 @@
 A single-player browser RPG inspired by Torn City, built with Next.js,
 React, and PostgreSQL.
 
-Create a character with a custom avatar, train at the gym, work jobs to
-earn money, and manage your inventory — all from your browser.
+Create a character with a custom avatar, fight enemies in turn-based
+combat, train at the gym, work jobs to earn money, and manage your
+inventory — all from your browser.
 
 ## Features
 
 - **Character creation** — name your character and customize a unique
   SVG avatar with 13 options (hairstyle, clothes, face, skin, etc.)
-- **Dashboard** — view your stats, battle stats, XP progress, and
-  balance at a glance
+- **Dashboard** — view your stats with real-time regeneration timers,
+  battle stats, XP progress, and balance at a glance
+- **Combat (PvE)** — turn-based fights against 8 NPC enemies
+  (Pickpocket → Crime Boss) with 4 actions: Attack, Heavy Attack,
+  Defend, and Flee. Earn money, XP, and item drops from victories
+- **Hospital** — get hospitalized when defeated in combat; live
+  countdown timer blocks all activities until you recover
+- **Real-time stat regen** — energy, nerve, health, and happiness
+  regenerate automatically over time with client-side countdown timers
 - **Gym** — train Strength, Defense, Speed, or Dexterity using energy
 - **Jobs** — apply for jobs (Grocer → Doctor), work to earn money and
   XP, level up to unlock better positions
@@ -78,25 +86,30 @@ app/
   create/page.tsx           # Character creation
   (game)/
     layout.tsx              # Game shell with sidebar
-    dashboard/              # Stats overview
+    dashboard/              # Stats overview + regen timers
+    combat/                 # Turn-based PvE combat
     gym/                    # Train battle stats
-    jobs/                   # Apply & work jobs
+    hospital/               # Hospital countdown & recovery
     inventory/              # Items, shop, use/sell
-app/actions/                # Server actions (character, gym, jobs, inventory)
+    jobs/                   # Apply & work jobs
+app/actions/                # Server actions (character, combat, gym, jobs, inventory)
 lib/db/                     # Drizzle schema & connection
-lib/game/constants.ts       # XP formulas, exercises, jobs, items
-avataaars-assets/           # SVG avatar component library
+lib/game/
+  constants.ts              # XP formulas, exercises, jobs, items, NPC enemies
+  regen.ts                  # Server-side stat regeneration logic
+components/game/            # Game UI components (regen timer)
 components/ui/              # shadcn/ui components
+avataaars-assets/           # SVG avatar component library
 ```
 
 ## Scripts
 
-| Command           | Description                        |
-|-------------------|------------------------------------|
-| `npm run dev`     | Start dev server with Turbopack    |
-| `npm run build`   | Production build                   |
-| `npm start`       | Start production server            |
-| `npx drizzle-kit push` | Push schema changes to DB    |
+| Command                | Description                     |
+|------------------------|---------------------------------|
+| `npm run dev`          | Start dev server with Turbopack |
+| `npm run build`        | Production build                |
+| `npm start`            | Start production server         |
+| `npx drizzle-kit push` | Push schema changes to DB      |
 
 ## License
 
