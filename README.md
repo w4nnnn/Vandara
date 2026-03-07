@@ -1,29 +1,112 @@
 # My Game
 
-A single-player browser RPG inspired by Torn City, built with Next.js, React, and PostgreSQL.
+A single-player browser RPG inspired by Torn City, built with Next.js,
+React, and PostgreSQL.
 
-Forge your destiny in a persistent world: customize your character, train your attributes, engage in dynamic combat, and build a real estate empire.
+Forge your destiny in a persistent world: customize your character, train
+your attributes, scavenge for loot, engage in dynamic combat, and build a
+real estate empire.
 
 ## 🚀 Features
 
-### Core Gameplay
-- **Character Creation & Customization** — Choose your name and design a unique SVG avatar using the Avataaars system with 13+ customizable features.
-- **Dynamic NPC System** — Fight against time-seeded, procedurally generated NPCs. Every hour brings new enemies with unique stats, names, and visual appearances.
-- **Battle Stats & Training** — Train Strength, Defense, Speed, and Dexterity in the Gym to climb the ranks.
-- **Combat (PvE)** — Tactical turn-based combat featuring status effects, critical hits, and procedural loot drops.
-- **Career Path** — Work jobs ranging from a local Grocer to a high-earning Doctor. Rank up to unlock better pay and XP rewards.
+### Character & Progression
 
-### Exploration & Economy
-- **Multi-Location Travel** — Explore the City Center, Gym District, Business District, Dark Alley, and Hospital. Each location unlocks unique facilities.
-- **Scavenging System** — Search areas for loot. Every location has unique loot tables (found cash in City Center, scrap in Dark Alley, medical supplies in the Hospital).
-- **Contextual Shops** — Visit the **General Store** in the City Center for basics, or find the **Black Market** in the Dark Alley for elite boosters (with location-specific pricing).
-- **Real Estate & Passive Income** — Buy properties like Apartment Complexes, Office Buildings, or Nightclubs to generate passive income hourly.
-- **Random Encounters** — Watch out during travel! 1% chance for random events like finding dropped money or getting mugged on the way.
+- **Character Creation** — Choose your name and design a unique SVG avatar
+  using the Avataaars system with 14 customizable features (hair, face,
+  clothing, accessories, skin tone, and more).
+- **Dual Leveling** — A main character level (XP exponent 1.5) unlocks jobs
+  and content, while an independent scavenge level (XP exponent 1.4) unlocks
+  better loot tables and recycling recipes.
+- **Battle Stats** — Train Strength, Defense, Speed, and Dexterity through
+  12 gym exercises across 3 intensity tiers.
 
-### Immersive Systems
-- **Location Buffs & Risks** — Your current location matters. Get 2x Health regeneration in the Hospital, 2x Happy regeneration in the City Center, or risk being pickpocketed in the Dark Alley.
-- **Real-time Synchronization** — Energy, Nerve, Health, and Happiness regenerate automatically in the background using server-verified timestamps.
-- **Professional UI** — Built with **Lucide React** icons and a sleek, dashboard-style interface optimized for both mobile and desktop.
+### Combat
+
+- **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs.
+  Every hour brings new enemies with unique stats, names, and appearances.
+- **Turn-based PvE** — Choose between Attack, Heavy Attack, Defend, or Flee.
+  Combat factors in all four stats for hit chance, damage, and crits.
+- **Hospitalization** — Lose a fight and you're hospitalized with a recovery
+  timer. All activities are blocked until release.
+
+### Scavenging
+
+- **5 Location Loot Tables** — City Center (cash and consumables), Gym
+  District (protein and energy), Business District (valuables), Dark Alley
+  (materials and weapons), Hospital (medical supplies).
+- **Item Rarity** — 4 tiers (Common, Uncommon, Rare, Epic) with color-coded
+  UI indicators.
+- **Scavenge Tools** — Equip a Flashlight (reduces "nothing" drops by 30%),
+  Metal Detector (+25% materials, 1.3× money), or Lucky Gloves (+20% rare
+  and epic chance).
+- **Streak System** — Consecutive scavenges at the same location grant +0.5%
+  loot bonus per action. Resets when you switch locations.
+- **Double Mode** — Spend 10 energy instead of 5 for a 30% shift from junk
+  and nothing toward useful items.
+- **Random Events** — 4 event types roll on each scavenge: Critical Find
+  (8%, doubles loot), Treasure Chest (5%, bonus money), Danger (7%, lose HP
+  and energy), and NPC Trade (4%, gain money).
+- **Scavenge Logs** — The last 15 actions are recorded in the database and
+  displayed in a timeline view.
+
+### Recycling & Crafting
+
+Turn junk into useful items through 6 recipes, each gated by scavenge level:
+
+| Recipe             | Level | Inputs                                   | Output         |
+|--------------------|-------|------------------------------------------|----------------|
+| Recycle Scrap      | 1     | 3 Rusty Screws + 2 Broken Plastics       | Scrap Metal    |
+| Recycle Bandages   | 2     | 4 Torn Fabrics                           | Bandages       |
+| Recycle Energy     | 3     | 3 Old Batteries + 1 Broken Plastic       | Energy Drink   |
+| Craft Flashlight   | 3     | 5 Batteries + 3 Scrap + 2 Plastic        | Flashlight     |
+| Craft Metal Detector | 5   | 10 Scrap + 5 Batteries + 8 Screws        | Metal Detector |
+| Craft Lucky Gloves | 7     | 10 Torn Fabric + 2 Rusty Shiv + 1 Watch  | Lucky Gloves   |
+
+### Jobs & Economy
+
+- **7 Career Tiers** — Grocer ($50) → Cashier → Mechanic → Security Guard →
+  Programmer → Lawyer → Doctor ($1,000). Each tier requires a minimum level
+  and costs nerve to work.
+- **Contextual Shops** — General Store in the City Center for basics, Black
+  Market in the Dark Alley for rare tools and materials.
+- **42+ Items** — Consumables, boosters, materials, junk, and tools across
+  5 categories.
+
+### Real Estate
+
+- **3 Properties** — Apartment Complex ($50k, $500/hr), Office Building
+  ($250k, $3k/hr), Nightclub ($1M, $15k/hr).
+- **Passive Income** — Properties generate money every hour. Collect anytime
+  to redeem earnings.
+
+### World & Travel
+
+- **5 Locations** — City Center, Gym District, Business District, Dark Alley,
+  and Hospital. Each offers unique facilities and scavenge loot.
+- **Travel Times** — Moving between locations takes 3–6 seconds depending on
+  distance.
+- **Random Encounters** — 1% chance per trip for events like finding dropped
+  money or getting mugged.
+- **Location Buffs** — 2× Health regen in the Hospital, 2× Happy regen in
+  the City Center, and pickpocket risk in the Dark Alley.
+
+### Resource Management
+
+Five player resources regenerate automatically using server-verified
+timestamps:
+
+| Resource | Max | Regen Rate        | Used For                  |
+|----------|-----|-------------------|---------------------------|
+| Energy   | 100 | +5 every 10 min   | Gym, jobs, scavenging     |
+| Nerve    | 50  | +1 every 5 min    | Jobs                      |
+| Health   | 100 | +5 every 5 min    | Lost in combat and events |
+| Happy    | 100 | +5 every 15 min   | General resource          |
+| Money    | ∞   | Via jobs/loot/rent | Shop, properties          |
+
+### Bilingual UI
+
+- Full Indonesian and English translations with locale-aware item names,
+  event descriptions, and UI labels.
 
 ## 🛠️ Tech Stack
 
@@ -39,10 +122,12 @@ Forge your destiny in a persistent world: customize your character, train your a
 ## 🚦 Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - PostgreSQL database
 
 ### Installation
+
 1. Clone the repository and install dependencies:
    ```bash
    npm install
@@ -61,26 +146,36 @@ Forge your destiny in a persistent world: customize your character, train your a
 
 ```
 app/
-  actions/                  # Server actions (combat, scavenging, properties, etc.)
+  actions/                  # Server actions (combat, jobs, scavenge, recycle, etc.)
   (game)/
-    dashboard/              # Stats overview
+    dashboard/              # Character stats overview
     travel/                 # Multi-location navigation
-    scavenge/               # Looting system
+    scavenge/               # Loot, tools, streak, events, and logs
     shop/                   # Location-based trade
-    properties/             # Real estate dashboard
-    npc/                    # Dynamic enemy encounters
-    gym/                    # Attribute training
+    properties/             # Real estate management
+    npc/                    # Procedural NPC combat
+    gym/                    # Attribute training (12 exercises)
+    hospital/               # Recovery after defeat
+    inventory/              # Item management, tool equipping, recycling
+    jobs/                   # Career progression
+  create/                   # Character creation with avatar builder
 lib/
-  db/                       # Schema & Drizzle setup
+  db/
+    schema.ts               # Drizzle ORM table definitions (8 tables)
+    index.ts                # Database connection
   game/
-    npc-generator.ts        # Time-seeded PRNG engine
-    regen.ts                # Background stat calculation
-    constants.ts            # Game balance & metadata
+    constants.ts            # Items, locations, jobs, loot tables, recipes, events
+    npc-generator.ts        # Time-seeded PRNG NPC engine
+    regen.ts                # Background stat regeneration
+  i18n/
+    translations.ts         # Indonesian & English translations
 components/
-  game/                     # Specialized gameplay components
-  ui/                       # Layout & primitives
+  game/                     # Gameplay UI components (regen timer, etc.)
+  ui/                       # shadcn/ui primitives
+avataaars-assets/           # SVG avatar rendering system
 ```
 
 ## 📜 License
+
 Private project.
 

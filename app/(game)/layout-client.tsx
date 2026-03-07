@@ -192,7 +192,6 @@ export default function GameLayoutClient({
             href="/travel"
             className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-white/10 transition-colors shrink-0"
           >
-            <MapPinIcon className="size-3.5 text-primary" />
             {isTraveling ? (
               <div className="absolute flex items-center gap-1 -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary/20 px-3 py-0.5 text-[10px] sm:text-xs font-bold text-primary backdrop-blur-md">
                 <PlaneIcon className="size-3" /> {Math.ceil(travelCountdown / 1000)}s
