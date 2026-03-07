@@ -13,8 +13,8 @@ import {
     ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
     UsersIcon, ArrowLeftIcon,
 } from 'lucide-react'
-import { initiateCombat, finishCombat } from '@/app/actions/combat'
 import { NPC_ENEMIES } from '@/lib/game/constants'
+import { useCombat } from './use-combat'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -34,49 +34,7 @@ type Player = {
     hospitalUntil: Date | null
 }
 
-type CombatantStats = {
-    health: number
-    maxHealth: number
-    strength: number
-    defense: number
-    speed: number
-    dexterity: number
-}
-
-type TurnAction = 'attack' | 'heavy_attack' | 'defend' | 'flee'
-
-type TurnLog = {
-    round: number
-    playerAction: TurnAction
-    playerDamage: number
-    enemyDamage: number
-    playerHealth: number
-    enemyHealth: number
-    message: string
-    fled?: boolean
-}
-
 type CombatPhase = 'select_npc' | 'npc_menu' | 'chatting' | 'in_combat' | 'result'
-
-// ─── Combat Logic (client-side) ─────────────────────────────────────
-
-function randomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min
-}
-
-function calcDamage(
-    attacker: CombatantStats,
-    defender: CombatantStats,
-    multiplier: number = 1.0
-): number {
-    const hitChance =
-        (attacker.speed + attacker.dexterity) /
-        (attacker.speed + attacker.dexterity + defender.speed + defender.dexterity) + 0.15
-    if (Math.random() > hitChance) return 0 // miss
-    const raw = randomInt(1, Math.ceil(attacker.strength * multiplier))
-    const block = randomInt(0, Math.floor(defender.defense / 2))
-    return Math.max(1, raw - block)
-}
 
 // ─── Components ─────────────────────────────────────────────────────
 
@@ -114,7 +72,6 @@ function HealthBar({
 
 export default function CombatContent({ player }: { player: Player }) {
     const router = useRouter()
-    const [isPending, startTransition] = useTransition()
 
     // Phase management
     const [phase, setPhase] = useState<CombatPhase>('select_npc')
@@ -125,30 +82,23 @@ export default function CombatContent({ player }: { player: Player }) {
     const [chatStep, setChatStep] = useState(0)
     const [chatHistory, setChatHistory] = useState<{ sender: 'npc' | 'player'; text: string }[]>([])
 
-    // Combat state
-    const [enemyId, setEnemyId] = useState<string | null>(null)
-    const [enemyLabel, setEnemyLabel] = useState('')
-    const [playerHP, setPlayerHP] = useState(0)
-    const [playerMaxHP, setPlayerMaxHP] = useState(0)
-    const [playerStats, setPlayerStats] = useState<CombatantStats | null>(null)
-    const [enemyHP, setEnemyHP] = useState(0)
-    const [enemyMaxHP, setEnemyMaxHP] = useState(0)
-    const [enemyStats, setEnemyStats] = useState<CombatantStats | null>(null)
-    const [isDefending, setIsDefending] = useState(false)
-    const [round, setRound] = useState(0)
-    const [turnLog, setTurnLog] = useState<TurnLog[]>([])
-
-    // Result state
-    const [result, setResult] = useState<{
-        won: boolean
-        moneyEarned: number
-        xpEarned: number
-        leveledUp: boolean
-        newLevel: number
-        itemsDropped: { itemId: string; label: string }[]
-        hospitalized: boolean
-        hospitalSeconds: number
-    } | null>(null)
+    const {
+        isPending,
+        enemyLabel,
+        playerHP,
+        playerMaxHP,
+        playerStats,
+        enemyHP,
+        enemyMaxHP,
+        enemyStats,
+        isDefending,
+        round,
+        turnLog,
+        result,
+        handleStartCombat,
+        processTurn,
+        resetCombat,
+    } = useCombat(player.level, setPhase, setError)
 
     // ─── NPC Selection ─────────────────────────────────────────────
 
@@ -191,171 +141,12 @@ export default function CombatContent({ player }: { player: Player }) {
         ? selectedNpc.dialogue.lines[chatStep].replies
         : []
 
-    // ─── Start combat ────────────────────────────────────────────────
-
-    const handleStartCombat = (eId: string) => {
-        setError(null)
-        startTransition(async () => {
-            const res = await initiateCombat(eId)
-            if ('error' in res) {
-                setError(res.error ?? 'An error occurred')
-                return
-            }
-            setEnemyId(eId)
-            setEnemyLabel(res.enemyStats.label)
-            setPlayerHP(res.playerStats.health)
-            setPlayerMaxHP(res.playerStats.maxHealth)
-            setPlayerStats(res.playerStats)
-            setEnemyHP(res.enemyStats.health)
-            setEnemyMaxHP(res.enemyStats.maxHealth)
-            setEnemyStats(res.enemyStats)
-            setIsDefending(false)
-            setRound(1)
-            setTurnLog([])
-            setResult(null)
-            setPhase('in_combat')
-        })
-    }
-
-    // ─── Process a turn ──────────────────────────────────────────────
-
-    const processTurn = useCallback((action: TurnAction) => {
-        if (!playerStats || !enemyStats || !enemyId) return
-
-        let newPlayerHP = playerHP
-        let newEnemyHP = enemyHP
-        let playerDmg = 0
-        let enemyDmg = 0
-        let message = ''
-        let fled = false
-
-        if (action === 'flee') {
-            const fleeChance = (playerStats.speed + playerStats.dexterity) /
-                (playerStats.speed + playerStats.dexterity + enemyStats.speed + enemyStats.dexterity) + 0.1
-            if (Math.random() < fleeChance) {
-                fled = true
-                message = 'You successfully fled the battle!'
-            } else {
-                // Failed flee — enemy gets a free hit
-                enemyDmg = calcDamage(enemyStats, playerStats)
-                newPlayerHP -= enemyDmg
-                message = `You tried to flee but failed! Enemy hits you for ${enemyDmg} damage.`
-            }
-        } else {
-            // Player attacks
-            if (action === 'attack') {
-                playerDmg = calcDamage(playerStats, enemyStats, 1.0)
-                message = playerDmg > 0
-                    ? `You strike for ${playerDmg} damage.`
-                    : 'Your attack missed!'
-            } else if (action === 'heavy_attack') {
-                // Higher damage, lower accuracy (handled by lower effective speed)
-                const boosted = { ...playerStats, strength: Math.ceil(playerStats.strength * 1.8), speed: Math.ceil(playerStats.speed * 0.5) }
-                playerDmg = calcDamage(boosted, enemyStats, 1.0)
-                message = playerDmg > 0
-                    ? `Heavy strike! ${playerDmg} damage!`
-                    : 'Your heavy attack missed!'
-            } else if (action === 'defend') {
-                setIsDefending(true)
-                message = 'You brace yourself for the next attack.'
-            }
-
-            newEnemyHP -= playerDmg
-
-            // Enemy attacks back (if still alive)
-            if (newEnemyHP > 0) {
-                const defMultiplier = (action === 'defend' || isDefending) ? 2.0 : 1.0
-                const defendingPlayer = {
-                    ...playerStats,
-                    defense: Math.ceil(playerStats.defense * defMultiplier),
-                }
-                enemyDmg = calcDamage(enemyStats, defendingPlayer)
-                newPlayerHP -= enemyDmg
-                message += enemyDmg > 0
-                    ? ` Enemy hits you for ${enemyDmg}${action === 'defend' ? ' (reduced)' : ''}.`
-                    : ' Enemy missed!'
-            } else {
-                message += ' Enemy is defeated!'
-            }
-
-            // Reset defending unless we just defended
-            if (action !== 'defend') {
-                setIsDefending(false)
-            }
-        }
-
-        const logEntry: TurnLog = {
-            round,
-            playerAction: action,
-            playerDamage: playerDmg,
-            enemyDamage: enemyDmg,
-            playerHealth: Math.max(0, newPlayerHP),
-            enemyHealth: Math.max(0, newEnemyHP),
-            message,
-            fled,
-        }
-
-        setPlayerHP(Math.max(0, newPlayerHP))
-        setEnemyHP(Math.max(0, newEnemyHP))
-        setTurnLog((prev) => [...prev, logEntry])
-        setRound((r) => r + 1)
-
-        // Check combat end
-        if (fled) {
-            // Fled — no rewards, no punishment, just end
-            const totalDealt = turnLog.reduce((s, t) => s + t.playerDamage, 0) + playerDmg
-            const totalTaken = turnLog.reduce((s, t) => s + t.enemyDamage, 0) + enemyDmg
-            startTransition(async () => {
-                // Update health on server
-                const res = await finishCombat(enemyId, false, totalDealt, totalTaken, Math.max(0, newPlayerHP))
-                // For flee, we set a custom result
-                setResult({
-                    won: false,
-                    moneyEarned: 0,
-                    xpEarned: 0,
-                    leveledUp: false,
-                    newLevel: player.level,
-                    itemsDropped: [],
-                    hospitalized: false,
-                    hospitalSeconds: 0,
-                })
-                setPhase('result')
-                router.refresh()
-            })
-        } else if (newEnemyHP <= 0 || newPlayerHP <= 0) {
-            const won = newEnemyHP <= 0
-            const totalDealt = turnLog.reduce((s, t) => s + t.playerDamage, 0) + playerDmg
-            const totalTaken = turnLog.reduce((s, t) => s + t.enemyDamage, 0) + enemyDmg
-
-            startTransition(async () => {
-                const res = await finishCombat(enemyId, won, totalDealt, totalTaken, Math.max(0, newPlayerHP))
-                if ('error' in res) {
-                    setError(res.error ?? 'An error occurred')
-                    return
-                }
-                setResult({
-                    won: res.won,
-                    moneyEarned: res.moneyEarned,
-                    xpEarned: res.xpEarned,
-                    leveledUp: res.leveledUp,
-                    newLevel: res.newLevel,
-                    itemsDropped: res.itemsDropped,
-                    hospitalized: res.hospitalized,
-                    hospitalSeconds: res.hospitalSeconds,
-                })
-                setPhase('result')
-                router.refresh()
-            })
-        }
-    }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, player.level, router, startTransition])
-
     // ─── Reset ───────────────────────────────────────────────────────
 
     const handleBackToNpcs = () => {
         setPhase('select_npc')
         setSelectedNpcId(null)
-        setResult(null)
-        setTurnLog([])
+        resetCombat()
         setError(null)
         setChatHistory([])
         setChatStep(0)
@@ -636,8 +427,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <SwordsIcon className="size-5" />
-                                    <span className="text-xs">Attack</span>
-                                    <span className="text-[10px] opacity-70">Balanced hit</span>
+                                    <span className="text-xs">Serang</span>
+                                    <span className="text-[10px] opacity-70">Serangan seimbang</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('heavy_attack')}
@@ -646,8 +437,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3 bg-orange-600 hover:bg-orange-700"
                                 >
                                     <SwordsIcon className="size-5" />
-                                    <span className="text-xs">Heavy Attack</span>
-                                    <span className="text-[10px] opacity-70">High dmg, low acc</span>
+                                    <span className="text-xs">Serangan Kuat</span>
+                                    <span className="text-[10px] opacity-70">Dmg tinggi, akurasi rendah</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('defend')}
@@ -656,8 +447,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <ShieldCheckIcon className="size-5" />
-                                    <span className="text-xs">Defend</span>
-                                    <span className="text-[10px] opacity-70">Halve damage</span>
+                                    <span className="text-xs">Bertahan</span>
+                                    <span className="text-[10px] opacity-70">Mengurangi damage musuh</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('flee')}
@@ -666,8 +457,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <FootprintsIcon className="size-5" />
-                                    <span className="text-xs">Flee</span>
-                                    <span className="text-[10px] opacity-70">Chance to escape</span>
+                                    <span className="text-xs">Kabur</span>
+                                    <span className="text-[10px] opacity-70">Peluang untuk kabur</span>
                                 </Button>
                             </div>
                         </CardContent>
@@ -677,7 +468,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     {turnLog.length > 0 && (
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm">Battle Log</CardTitle>
+                                <CardTitle className="text-sm">Log Pertarungan</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="max-h-48 space-y-1.5 overflow-y-auto text-sm">
@@ -705,17 +496,17 @@ export default function CombatContent({ player }: { player: Player }) {
                                 {result.won ? (
                                     <>
                                         <TrophyIcon className="size-6 text-yellow-500" />
-                                        <span className="text-green-600 dark:text-green-400">Victory!</span>
+                                        <span className="text-green-600 dark:text-green-400">Menang!</span>
                                     </>
                                 ) : result.hospitalized ? (
                                     <>
                                         <SkullIcon className="size-6 text-red-500" />
-                                        <span className="text-red-600 dark:text-red-400">Defeated!</span>
+                                        <span className="text-red-600 dark:text-red-400">Kalah!</span>
                                     </>
                                 ) : (
                                     <>
                                         <FootprintsIcon className="size-6 text-yellow-600" />
-                                        <span className="text-yellow-600 dark:text-yellow-400">Fled</span>
+                                        <span className="text-yellow-600 dark:text-yellow-400">Kabur</span>
                                     </>
                                 )}
                             </CardTitle>
@@ -726,14 +517,14 @@ export default function CombatContent({ player }: { player: Player }) {
                                 <div className="grid grid-cols-2 gap-3 text-sm">
                                     <div className="flex items-center gap-2">
                                         <SwordsIcon className="size-3.5 text-orange-500" />
-                                        <span>Total damage dealt: <strong>{turnLog.reduce((s, t) => s + t.playerDamage, 0)}</strong></span>
+                                        <span>Total damage diberikan: <strong>{turnLog.reduce((s, t) => s + t.playerDamage, 0)}</strong></span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <ShieldIcon className="size-3.5 text-blue-500" />
-                                        <span>Total damage taken: <strong>{turnLog.reduce((s, t) => s + t.enemyDamage, 0)}</strong></span>
+                                        <span>Total damage diterima: <strong>{turnLog.reduce((s, t) => s + t.enemyDamage, 0)}</strong></span>
                                     </div>
                                     <div className="flex items-center gap-2 text-muted-foreground">
-                                        <span>Rounds fought: <strong>{turnLog.length}</strong></span>
+                                        <span>Total ronde: <strong>{turnLog.length}</strong></span>
                                     </div>
                                 </div>
                             )}
@@ -773,9 +564,9 @@ export default function CombatContent({ player }: { player: Player }) {
                             {result.hospitalized && (
                                 <Alert variant="destructive" className="mt-2">
                                     <HeartPulseIcon className="size-4" />
-                                    <AlertTitle>Hospitalized!</AlertTitle>
+                                    <AlertTitle>Masuk Rumah Sakit!</AlertTitle>
                                     <AlertDescription>
-                                        You were defeated. Hospital time: {result.hospitalSeconds}s
+                                        Kamu dikalahkan. Waktu pemulihan: {result.hospitalSeconds}s
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -786,7 +577,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     {turnLog.length > 0 && (
                         <details>
                             <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground mb-2">
-                                View full battle log ({turnLog.length} rounds)
+                                Lihat log pertarungan lengkap ({turnLog.length} ronde)
                             </summary>
                             <Card>
                                 <CardContent className="p-4">

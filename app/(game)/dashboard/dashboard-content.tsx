@@ -18,6 +18,7 @@ import {
   HeartPulseIcon,
   PlaneIcon,
   MapPinIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LOCATIONS, type LocationId } from '@/lib/game/constants'
@@ -213,7 +214,7 @@ export default function DashboardContent({ player }: { player: Player }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
               { label: 'Travel', icon: PlaneIcon, href: '/travel', desc: 'Change location' },
-              { label: 'Combat', icon: SwordsIcon, href: '/combat', desc: 'Dark Alley' },
+              { label: 'NPC', icon: UsersIcon, href: '/npc', desc: 'Dark Alley' },
               { label: 'Gym', icon: DumbbellIcon, href: '/gym', desc: 'Gym District' },
               { label: 'Jobs', icon: BriefcaseIcon, href: '/jobs', desc: 'Business District' },
               { label: 'Inventory', icon: BackpackIcon, href: '/inventory', desc: 'Anywhere' },

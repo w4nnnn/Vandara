@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import { getPlayer } from '@/app/actions/character'
-import CombatContent from './combat-content'
+import NpcContent from './npc-content'
 
-export default async function CombatPage() {
+export default async function NpcPage() {
     const player = await getPlayer()
     if (!player) redirect('/create')
 
-    return <CombatContent player={player} />
+    return <NpcContent player={player} />
 }

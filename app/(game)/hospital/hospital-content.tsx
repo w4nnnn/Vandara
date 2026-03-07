@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress'
 import {
     HeartPulseIcon, HeartIcon, ClockIcon,
     CheckCircle2Icon, SwordsIcon, BackpackIcon,
+    UsersIcon,
 } from 'lucide-react'
 
 type Player = {
@@ -156,9 +157,9 @@ export default function HospitalContent({ player }: { player: Player }) {
 
                             <div className="flex gap-3">
                                 <Button asChild variant="default" className="gap-2">
-                                    <Link href="/combat">
-                                        <SwordsIcon className="size-4" />
-                                        Go to Combat
+                                    <Link href="/npc">
+                                        <UsersIcon className="size-4" />
+                                        Go to NPC
                                     </Link>
                                 </Button>
                                 <Button asChild variant="outline" className="gap-2">
