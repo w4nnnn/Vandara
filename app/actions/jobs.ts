@@ -43,6 +43,10 @@ export async function work() {
   const player = await getPlayer()
   if (!player) return { error: 'Not logged in' }
 
+  if (player.isHospitalized) {
+    return { error: 'You are in the hospital and cannot work right now.' }
+  }
+
   if (!player.jobId) return { error: 'You don\'t have a job' }
 
   const job = JOBS.find((j) => j.id === player.jobId)

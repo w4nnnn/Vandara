@@ -1,19 +1,23 @@
 'use client'
 
+import Link from 'next/link'
 import AvatarComponent from '@/avataaars-assets'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { xpForLevel } from '@/lib/game/constants'
+import RegenTimer from '@/components/game/regen-timer'
 import {
   ShieldIcon,
   SwordIcon,
   ZapIcon,
   TargetIcon,
-  HeartIcon,
-  BoltIcon,
-  BrainIcon,
-  SmileIcon,
+  SwordsIcon,
+  DumbbellIcon,
+  BriefcaseIcon,
+  BackpackIcon,
+  HeartPulseIcon,
 } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 type Player = {
   id: number
@@ -33,6 +37,9 @@ type Player = {
   defense: number
   speed: number
   dexterity: number
+  isHospitalized: boolean
+  hospitalUntil: Date | null
+  updatedAt: Date
   avatar?: {
     avatarStyle: string
     topType: string
@@ -51,40 +58,7 @@ type Player = {
   } | null
 }
 
-function StatBar({
-  label,
-  value,
-  max,
-  icon: Icon,
-  color,
-}: {
-  label: string
-  value: number
-  max: number
-  icon: React.ElementType
-  color: string
-}) {
-  const pct = Math.round((value / max) * 100)
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-1.5 font-medium">
-          <Icon className="size-3.5" />
-          {label}
-        </span>
-        <span className="text-muted-foreground">
-          {value} / {max}
-        </span>
-      </div>
-      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={`absolute inset-y-0 left-0 rounded-full transition-all ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
-}
+
 
 function BattleStat({
   label,
@@ -117,6 +91,20 @@ export default function DashboardContent({ player }: { player: Player }) {
 
   return (
     <div className="space-y-6">
+      {/* Hospital Alert */}
+      {player.isHospitalized && (
+        <Alert variant="destructive">
+          <HeartPulseIcon className="size-4" />
+          <AlertTitle>Hospitalized</AlertTitle>
+          <AlertDescription>
+            You are in the hospital. All activities are blocked until you are discharged.
+            <Link href="/hospital" className="ml-1 underline font-medium">
+              View Hospital →
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Player Info */}
       <Card>
         <CardContent className="flex items-center gap-4 p-4">
@@ -166,40 +154,13 @@ export default function DashboardContent({ player }: { player: Player }) {
         </CardContent>
       </Card>
 
-      {/* Status Bars */}
+      {/* Status Bars — Real-time Regen */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Status</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <StatBar
-            label="Health"
-            value={player.health}
-            max={player.maxHealth}
-            icon={HeartIcon}
-            color="bg-red-500"
-          />
-          <StatBar
-            label="Energy"
-            value={player.energy}
-            max={player.maxEnergy}
-            icon={BoltIcon}
-            color="bg-green-500"
-          />
-          <StatBar
-            label="Nerve"
-            value={player.nerve}
-            max={player.maxNerve}
-            icon={BrainIcon}
-            color="bg-blue-500"
-          />
-          <StatBar
-            label="Happy"
-            value={player.happy}
-            max={player.maxHappy}
-            icon={SmileIcon}
-            color="bg-yellow-500"
-          />
+        <CardContent>
+          <RegenTimer player={player} />
         </CardContent>
       </Card>
 
@@ -240,26 +201,24 @@ export default function DashboardContent({ player }: { player: Player }) {
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Crimes', icon: '🔪', desc: 'Earn money & XP' },
-              { label: 'Gym', icon: '💪', desc: 'Train your stats' },
-              { label: 'Jobs', icon: '💼', desc: 'Steady income' },
-              { label: 'Travel', icon: '✈️', desc: 'Explore cities' },
-              { label: 'Inventory', icon: '🎒', desc: 'Your items' },
-              { label: 'Shop', icon: '🏪', desc: 'Buy equipment' },
+              { label: 'Combat', icon: SwordsIcon, href: '/combat', desc: 'Fight enemies' },
+              { label: 'Gym', icon: DumbbellIcon, href: '/gym', desc: 'Train your stats' },
+              { label: 'Jobs', icon: BriefcaseIcon, href: '/jobs', desc: 'Steady income' },
+              { label: 'Inventory', icon: BackpackIcon, href: '/inventory', desc: 'Your items' },
             ].map((action) => (
-              <button
+              <Link
                 key={action.label}
-                disabled
-                className="flex flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center opacity-50"
+                href={action.href}
+                className="flex flex-col items-center gap-1 rounded-lg border p-4 text-center hover:border-primary/50 hover:bg-accent transition-colors"
               >
-                <span className="text-2xl">{action.icon}</span>
+                <action.icon className="size-6 text-primary" />
                 <span className="text-sm font-medium">{action.label}</span>
                 <span className="text-[10px] text-muted-foreground">
-                  Coming Soon
+                  {action.desc}
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         </CardContent>

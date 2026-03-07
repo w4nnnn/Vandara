@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AVATAR_OPTIONS, type AvatarOptionKey } from '@/lib/game/constants'
+import { applyRegen } from '@/lib/game/regen'
 
 const AVATAR_KEYS: AvatarOptionKey[] = [
   'topType', 'accessoriesType', 'hatColor', 'hairColor',
@@ -94,9 +95,50 @@ export async function getPlayer() {
   })
   if (!player) return null
 
+  // Auto-clear hospital if timer expired
+  const now = new Date()
+  let isHospitalized = player.isHospitalized
+  let hospitalUntil = player.hospitalUntil
+  if (isHospitalized && hospitalUntil && now >= hospitalUntil) {
+    isHospitalized = false
+    hospitalUntil = null
+    await db
+      .update(players)
+      .set({
+        isHospitalized: false,
+        hospitalUntil: null,
+        updatedAt: now,
+      })
+      .where(eq(players.id, player.id))
+  }
+
+  // Apply stat regeneration based on elapsed time
+  const regen = applyRegen({ ...player, updatedAt: isHospitalized ? now : player.updatedAt })
+  if (regen.changed) {
+    await db
+      .update(players)
+      .set({
+        energy: regen.energy,
+        nerve: regen.nerve,
+        health: regen.health,
+        happy: regen.happy,
+        updatedAt: new Date(),
+      })
+      .where(eq(players.id, player.id))
+  }
+
   const avatar = await db.query.playerAvatars.findFirst({
     where: eq(playerAvatars.playerId, playerId),
   })
 
-  return { ...player, avatar }
+  return {
+    ...player,
+    energy: regen.energy,
+    nerve: regen.nerve,
+    health: regen.health,
+    happy: regen.happy,
+    isHospitalized,
+    hospitalUntil,
+    avatar,
+  }
 }

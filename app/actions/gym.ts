@@ -10,6 +10,10 @@ export async function trainGym(exerciseId: string) {
   const player = await getPlayer()
   if (!player) return { error: 'Not logged in' }
 
+  if (player.isHospitalized) {
+    return { error: 'You are in the hospital and cannot train right now.' }
+  }
+
   const exercise = GYM_EXERCISES.find((e) => e.id === exerciseId)
   if (!exercise) return { error: 'Invalid exercise' }
 

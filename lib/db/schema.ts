@@ -19,6 +19,8 @@ export const players = pgTable('players', {
   speed: integer('speed').notNull().default(1),
   dexterity: integer('dexterity').notNull().default(1),
   jobId: varchar('job_id', { length: 50 }),
+  isHospitalized: boolean('is_hospitalized').notNull().default(false),
+  hospitalUntil: timestamp('hospital_until'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -75,5 +77,20 @@ export const jobLogs = pgTable('job_logs', {
   jobId: varchar('job_id', { length: 50 }).notNull(),
   moneyEarned: integer('money_earned').notNull(),
   xpEarned: integer('xp_earned').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Combat log
+export const combatLogs = pgTable('combat_logs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  enemyId: varchar('enemy_id', { length: 50 }).notNull(),
+  won: boolean('won').notNull(),
+  damageDealt: integer('damage_dealt').notNull(),
+  damageTaken: integer('damage_taken').notNull(),
+  moneyEarned: integer('money_earned').notNull().default(0),
+  xpEarned: integer('xp_earned').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
