@@ -21,10 +21,12 @@ import {
     SCAVENGE_ENERGY_COST, DOUBLE_ENERGY_COST,
     SCAVENGE_TOOL_IDS, RECYCLE_RECIPES,
     RARITY_COLORS, RARITY_BG,
+    SCAVENGE_SPOTS,
     getStreakBonus,
     type ItemRarity,
 } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
+import * as LucideIcons from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -115,16 +117,18 @@ export default function ScavengeContent({
         newLevel?: number
         newXp?: number
         xpNeeded?: number
+        spotLabel?: string | null
     } | null>(null)
     const [loadingOpen, setLoadingOpen] = useState(false)
     const [resultOpen, setResultOpen] = useState(false)
     const [doubleMode, setDoubleMode] = useState(false)
+    const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null)
 
     const handleScavenge = () => {
         setResult(null)
         setLoadingOpen(true)
         startTransition(async () => {
-            const res = await scavenge(doubleMode)
+            const res = await scavenge(selectedSpotId, doubleMode)
             setResult(res)
             setLoadingOpen(false)
             setResultOpen(true)
@@ -153,6 +157,7 @@ export default function ScavengeContent({
     const currentStreak = streakLocation ? player.scavengeStreak : 0
     const streakBonus = getStreakBonus(currentStreak)
     const energyCost = doubleMode ? DOUBLE_ENERGY_COST : SCAVENGE_ENERGY_COST
+    const spots = SCAVENGE_SPOTS[player.currentLocation as LocationId] ?? []
 
     const lootChances = useMemo(() =>
         getScavengeChances(player.currentLocation as LocationId, player.scavengeLevel),
@@ -282,6 +287,11 @@ export default function ScavengeContent({
                         <DialogTitle className="text-center">
                             {result?.error ? t('scavenge.failed') : t('scavenge.lootFound')}
                         </DialogTitle>
+                        {result?.spotLabel && (
+                            <p className="text-center text-xs text-muted-foreground">
+                                Ditemukan di: <span className="font-semibold">{result.spotLabel}</span>
+                            </p>
+                        )}
                     </DialogHeader>
                     <DialogDescription asChild>
                         <div className="space-y-4">
@@ -369,6 +379,38 @@ export default function ScavengeContent({
                     <CardDescription>{t('scavenge.desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="relative space-y-4">
+                    {/* Spot Selection */}
+                    {spots.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium">Pilih Tempat Memulung:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {spots.map(spot => {
+                                    const IconComp = (LucideIcons as any)[spot.icon + 'Icon'] ?? LucideIcons.MapPinIcon
+                                    const isSelected = selectedSpotId === spot.id
+                                    return (
+                                        <button
+                                            key={spot.id}
+                                            onClick={() => setSelectedSpotId(isSelected ? null : spot.id)}
+                                            className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${isSelected
+                                                ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                                : 'hover:bg-muted/50 text-muted-foreground'
+                                                }`}
+                                        >
+                                            <IconComp className="size-5 shrink-0" />
+                                            <div>
+                                                <div className="text-sm font-medium">{spot.label}</div>
+                                                <div className="text-[10px] opacity-70">{spot.hint}</div>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                            {!selectedSpotId && (
+                                <p className="text-[10px] text-muted-foreground">Tidak memilih = tempat acak</p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Mode Toggle */}
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-1">
                         <button

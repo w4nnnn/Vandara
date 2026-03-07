@@ -7,13 +7,16 @@ import { getPlayer } from './character'
 import {
     type LocationId,
     type ScavengeEventType,
+    type SpotLootMod,
     SCAVENGE_ENERGY_COST,
     SCAVENGE_XP_PER_ACTION,
     SCAVENGE_LOOT_TABLES,
     SCAVENGE_EVENTS,
+    SCAVENGE_SPOTS,
     DOUBLE_ENERGY_COST,
     DOUBLE_SCAVENGE_LOOT_SHIFT,
     scavengeXpForLevel,
+    getScavengeXpForLoot,
     ITEMS,
     JUNK_IDS,
     getStreakBonus,
@@ -42,6 +45,7 @@ function generateLoot(
     toolEffect: { nothingReduction?: number; materialBonus?: number; moneyBonus?: number; rareBonus?: number } | null,
     streak: number,
     doubleMode: boolean,
+    spotMod: SpotLootMod | null,
 ): LootResult {
     const table = SCAVENGE_LOOT_TABLES[locationId]
     if (!table) return { money: 5 }
@@ -91,6 +95,57 @@ function generateLoot(
                 if (def && (def.rarity === 'rare' || def.rarity === 'epic')) {
                     return { entry: r.entry, chance: r.chance * (1 + toolEffect.rareBonus! / 100) }
                 }
+            }
+            return r
+        })
+    }
+
+    // ── Spot modifiers ──
+    if (spotMod?.nothingReduction) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'none') {
+                return { entry: r.entry, chance: r.chance * (1 - spotMod.nothingReduction! / 100) }
+            }
+            return r
+        })
+    }
+    if (spotMod?.junkReduction) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'item' && r.entry.itemId === 'junk') {
+                return { entry: r.entry, chance: r.chance * (1 - spotMod.junkReduction! / 100) }
+            }
+            return r
+        })
+    }
+    if (spotMod?.materialBonus) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'item' && r.entry.itemId !== 'junk') {
+                const def = ITEMS[r.entry.itemId!]
+                if (def?.category === 'material') {
+                    return { entry: r.entry, chance: r.chance * (1 + spotMod.materialBonus! / 100) }
+                }
+            }
+            return r
+        })
+    }
+    if (spotMod?.rareBonus) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'item' && r.entry.itemId !== 'junk') {
+                const def = ITEMS[r.entry.itemId!]
+                if (def && (def.rarity === 'rare' || def.rarity === 'epic')) {
+                    return { entry: r.entry, chance: r.chance * (1 + spotMod.rareBonus! / 100) }
+                }
+            }
+            return r
+        })
+    }
+
+    // Spot: boost specific loot entries by ID (1.8x multiplier)
+    if (spotMod?.boostedLootIds && spotMod.boostedLootIds.length > 0) {
+        const boosted = new Set(spotMod.boostedLootIds)
+        rawChances = rawChances.map(r => {
+            if (boosted.has(r.entry.id)) {
+                return { entry: r.entry, chance: r.chance * 1.8 }
             }
             return r
         })
@@ -164,6 +219,7 @@ function generateLoot(
         const max = selected.moneyMax ?? 25
         let bonus = 1 + (scavengeLevel - 1) * 0.1
         if (toolEffect?.moneyBonus) bonus *= toolEffect.moneyBonus
+        if (spotMod?.moneyBonus) bonus *= spotMod.moneyBonus
         const amount = Math.floor((Math.floor(Math.random() * (max - min + 1)) + min) * bonus)
         return { money: amount }
     } else if (selected.type === 'none') {
@@ -187,7 +243,7 @@ async function giveItem(playerId: number, itemId: string, quantity: number) {
     }
 }
 
-export async function scavenge(doubleMode = false) {
+export async function scavenge(spotId: string | null = null, doubleMode = false) {
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
 
@@ -198,6 +254,15 @@ export async function scavenge(doubleMode = false) {
     if (player.energy < energyCost) return { error: `Not enough energy. Need ${energyCost}` }
 
     const locationId = player.currentLocation as LocationId
+
+    // Validate spot (optional but flavor-adding)
+    const availableSpots = SCAVENGE_SPOTS[locationId] ?? []
+    let selectedSpot = spotId ? availableSpots.find(s => s.id === spotId) : null
+    if (!selectedSpot && availableSpots.length > 0) {
+        // Pick a random spot if none selected
+        selectedSpot = availableSpots[Math.floor(Math.random() * availableSpots.length)]
+    }
+
     const currentLevel = player.scavengeLevel
 
     // Resolve equipped tool effects
@@ -212,7 +277,7 @@ export async function scavenge(doubleMode = false) {
     const event = rollEvent(newStreak)
 
     // Generate base loot
-    let loot = generateLoot(locationId, currentLevel, toolEffect, newStreak, doubleMode)
+    let loot = generateLoot(locationId, currentLevel, toolEffect, newStreak, doubleMode, selectedSpot?.lootMod ?? null)
 
     // Apply event effects
     let eventData: { type: ScavengeEventType; detail?: string } | null = null
@@ -249,8 +314,10 @@ export async function scavenge(doubleMode = false) {
         }
     }
 
-    // Calculate XP gain
-    const xpGain = doubleMode ? SCAVENGE_XP_PER_ACTION * 2 : SCAVENGE_XP_PER_ACTION
+    // Calculate XP gain — base + value-based
+    const itemXp = getScavengeXpForLoot(loot)
+    const baseXp = doubleMode ? SCAVENGE_XP_PER_ACTION * 2 : SCAVENGE_XP_PER_ACTION
+    const xpGain = baseXp + (doubleMode ? itemXp * 2 : itemXp)
     const newXp = player.scavengeXp + xpGain
     const xpNeeded = scavengeXpForLevel(currentLevel + 1)
     const leveledUp = newXp >= xpNeeded
@@ -309,6 +376,7 @@ export async function scavenge(doubleMode = false) {
         newLevel,
         newXp,
         xpNeeded: leveledUp ? scavengeXpForLevel(newLevel + 1) : xpNeeded,
+        spotLabel: selectedSpot?.label ?? null,
     }
 }
 

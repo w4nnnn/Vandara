@@ -17,16 +17,16 @@ export function levelFromXP(totalXP: number): number {
 
 // Regeneration rates
 export const ENERGY_REGEN_RATE = 5
-export const ENERGY_REGEN_INTERVAL_MS = 10 * 60 * 1000 // 10 minutes
+export const ENERGY_REGEN_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
 export const NERVE_REGEN_RATE = 1
-export const NERVE_REGEN_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+export const NERVE_REGEN_INTERVAL_MS = 3 * 60 * 1000 // 3 minutes
 
 export const HAPPY_REGEN_RATE = 5
-export const HAPPY_REGEN_INTERVAL_MS = 15 * 60 * 1000 // 15 minutes
+export const HAPPY_REGEN_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
 export const HEALTH_REGEN_RATE = 5
-export const HEALTH_REGEN_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+export const HEALTH_REGEN_INTERVAL_MS = 5 * 60 * 1000 // 3 minutes
 
 // Avatar option values
 export const AVATAR_OPTIONS = {
@@ -343,13 +343,129 @@ export const PROPERTIES: Record<string, PropertyDef> = {
 
 // ─── SCAVENGE ─────────────────────────────────────────────────────
 
-export const SCAVENGE_ENERGY_COST = 5
-export const SCAVENGE_XP_PER_ACTION = 10
+export const SCAVENGE_ENERGY_COST = 2
+export const SCAVENGE_XP_PER_ACTION = 5 // base XP (added on top of item-based XP)
 export const SCAVENGE_XP_BASE = 50
 export const SCAVENGE_XP_EXPONENT = 1.4
 
 export const DOUBLE_ENERGY_COST = SCAVENGE_ENERGY_COST * 2
 export const DOUBLE_SCAVENGE_LOOT_SHIFT = 0.3 // shift 30% of junk/none chance to useful items
+
+// XP calculation based on loot value
+export function getScavengeXpForLoot(loot: { money?: number; itemId?: string; quantity?: number }): number {
+  if ('money' in loot && loot.money !== undefined) {
+    // Money: 1 XP per $5 earned
+    return Math.max(1, Math.floor(loot.money / 5))
+  }
+  if ('itemId' in loot && loot.itemId) {
+    const def = ITEMS[loot.itemId]
+    if (!def) return 1
+    // Item: XP = item value / 5, scaled by quantity
+    const qty = loot.quantity ?? 1
+    return Math.max(1, Math.floor((def.value * qty) / 5))
+  }
+  return 1 // nothing found = 1 XP
+}
+
+// ─── SCAVENGE SPOTS ──────────────────────────────────────────────
+
+export interface SpotLootMod {
+  nothingReduction?: number  // reduce "nothing" chance by %
+  moneyBonus?: number        // multiply money amount (e.g. 1.5 = +50%)
+  materialBonus?: number     // increase material item chance by %
+  junkReduction?: number     // reduce junk chance by %
+  rareBonus?: number         // increase rare/epic item chance by %
+  boostedLootIds?: string[]  // specific loot entry IDs to boost (1.8x chance)
+}
+
+export interface ScavengeSpot {
+  id: string
+  label: string
+  icon: string
+  hint: string
+  lootMod: SpotLootMod
+}
+
+export const SCAVENGE_SPOTS: Record<LocationId, ScavengeSpot[]> = {
+  city_center: [
+    {
+      id: 'trash_bin', label: 'Tempat Sampah', icon: 'Trash2', hint: 'Junk sedikit, energi naik',
+      lootMod: { junkReduction: 20, boostedLootIds: ['cc_energy', 'cc_happy'] }
+    },
+    {
+      id: 'park_bench', label: 'Bangku Taman', icon: 'TreePine', hint: 'Kosong berkurang, happy naik',
+      lootMod: { nothingReduction: 30, boostedLootIds: ['cc_happy'] }
+    },
+    {
+      id: 'bus_stop', label: 'Halte Bus', icon: 'Bus', hint: 'Uang x1.5',
+      lootMod: { moneyBonus: 1.5, boostedLootIds: ['cc_money'] }
+    },
+    {
+      id: 'alley_corner', label: 'Sudut Gang', icon: 'CornerDownRight', hint: 'Energi & uang naik',
+      lootMod: { boostedLootIds: ['cc_energy', 'cc_money'] }
+    },
+  ],
+  gym_district: [
+    {
+      id: 'locker_room', label: 'Ruang Loker', icon: 'DoorOpen', hint: 'Protein & energi naik',
+      lootMod: { rareBonus: 20, boostedLootIds: ['gd_protein', 'gd_energy'] }
+    },
+    {
+      id: 'dumpster', label: 'Tempat Sampah Besar', icon: 'Container', hint: 'Kosong & junk turun',
+      lootMod: { junkReduction: 15, nothingReduction: 15, boostedLootIds: ['gd_protein'] }
+    },
+    {
+      id: 'parking_lot', label: 'Tempat Parkir', icon: 'Car', hint: 'Uang x1.3',
+      lootMod: { moneyBonus: 1.3, boostedLootIds: ['gd_money'] }
+    },
+  ],
+  business_district: [
+    {
+      id: 'office_trash', label: 'Tong Sampah Kantor', icon: 'Building2', hint: 'Koper & material naik',
+      lootMod: { materialBonus: 40, boostedLootIds: ['bd_briefcase', 'bd_nerve'] }
+    },
+    {
+      id: 'terminal', label: 'Terminal Komputer', icon: 'Monitor', hint: 'Uang x2, jam tangan naik',
+      lootMod: { moneyBonus: 2.0, junkReduction: 30, boostedLootIds: ['bd_money', 'bd_watch'] }
+    },
+    {
+      id: 'reception', label: 'Meja Resepsionis', icon: 'Landmark', hint: 'Kosong turun, nerve naik',
+      lootMod: { nothingReduction: 40, boostedLootIds: ['bd_nerve', 'bd_briefcase'] }
+    },
+  ],
+  dark_alley: [
+    {
+      id: 'dumpster_da', label: 'Kontainer Sampah', icon: 'Container', hint: 'Scrap & shiv naik',
+      lootMod: { junkReduction: 20, boostedLootIds: ['da_scrap', 'da_shiv'] }
+    },
+    {
+      id: 'abandoned_car', label: 'Mobil Terlantar', icon: 'Car', hint: 'Jam tangan & scrap naik',
+      lootMod: { materialBonus: 30, boostedLootIds: ['da_oldwatch', 'da_scrap'] }
+    },
+    {
+      id: 'sewer_grate', label: 'Saluran Got', icon: 'Droplets', hint: 'Uang x1.5, shiv naik',
+      lootMod: { moneyBonus: 1.5, boostedLootIds: ['da_money', 'da_shiv'] }
+    },
+    {
+      id: 'hidden_stash', label: 'Simpanan Rahasia', icon: 'Eye', hint: 'Jam tangan & langka naik besar',
+      lootMod: { rareBonus: 35, nothingReduction: 20, boostedLootIds: ['da_oldwatch', 'da_shiv'] }
+    },
+  ],
+  hospital: [
+    {
+      id: 'waiting_room', label: 'Ruang Tunggu', icon: 'Clock', hint: 'Kosong turun, perban naik',
+      lootMod: { nothingReduction: 25, boostedLootIds: ['hp_bandages'] }
+    },
+    {
+      id: 'supply_closet', label: 'Lemari Persediaan', icon: 'Package', hint: 'Medkit & ramuan naik',
+      lootMod: { rareBonus: 25, materialBonus: 20, boostedLootIds: ['hp_medkit', 'hp_potion'] }
+    },
+    {
+      id: 'parking_garage', label: 'Garasi Parkir', icon: 'Warehouse', hint: 'Uang x1.3, perban naik',
+      lootMod: { moneyBonus: 1.3, junkReduction: 15, boostedLootIds: ['hp_money', 'hp_bandages'] }
+    },
+  ],
+}
 
 // list of actual junk item IDs used for randomization
 export const JUNK_IDS = ['rusty_screw', 'broken_plastic', 'old_battery', 'torn_fabric'] as const
