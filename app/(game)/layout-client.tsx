@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import {
   LayoutDashboardIcon,
-  SwordsIcon,
+  UsersIcon,
   DumbbellIcon,
   BackpackIcon,
   BriefcaseIcon,
@@ -56,7 +56,7 @@ type Player = {
 const NAV_ITEMS = [
   { label: 'Home', href: '/dashboard', icon: LayoutDashboardIcon, activity: null },
   { label: 'Travel', href: '/travel', icon: PlaneIcon, activity: null },
-  { label: 'Combat', href: '/combat', icon: SwordsIcon, activity: 'combat' as const },
+  { label: 'NPC', href: '/combat', icon: UsersIcon, activity: 'combat' as const },
   { label: 'Gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
   { label: 'Jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
   { label: 'Hospital', href: '/hospital', icon: HeartPulseIcon, activity: 'hospital' as const },

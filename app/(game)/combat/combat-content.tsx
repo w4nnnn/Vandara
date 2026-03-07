@@ -10,7 +10,8 @@ import {
     SwordsIcon, ShieldIcon, ZapIcon, TargetIcon,
     HeartIcon, SkullIcon, TrophyIcon, AlertTriangleIcon,
     CoinsIcon, StarIcon, PackageIcon, HeartPulseIcon,
-    ShieldCheckIcon, FootprintsIcon,
+    ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
+    UsersIcon, ArrowLeftIcon,
 } from 'lucide-react'
 import { initiateCombat, finishCombat } from '@/app/actions/combat'
 import { NPC_ENEMIES } from '@/lib/game/constants'
@@ -55,7 +56,7 @@ type TurnLog = {
     fled?: boolean
 }
 
-type CombatPhase = 'select_enemy' | 'in_combat' | 'result'
+type CombatPhase = 'select_npc' | 'npc_menu' | 'chatting' | 'in_combat' | 'result'
 
 // ─── Combat Logic (client-side) ─────────────────────────────────────
 
@@ -116,8 +117,13 @@ export default function CombatContent({ player }: { player: Player }) {
     const [isPending, startTransition] = useTransition()
 
     // Phase management
-    const [phase, setPhase] = useState<CombatPhase>('select_enemy')
+    const [phase, setPhase] = useState<CombatPhase>('select_npc')
     const [error, setError] = useState<string | null>(null)
+
+    // NPC interaction state
+    const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null)
+    const [chatStep, setChatStep] = useState(0)
+    const [chatHistory, setChatHistory] = useState<{ sender: 'npc' | 'player'; text: string }[]>([])
 
     // Combat state
     const [enemyId, setEnemyId] = useState<string | null>(null)
@@ -143,6 +149,47 @@ export default function CombatContent({ player }: { player: Player }) {
         hospitalized: boolean
         hospitalSeconds: number
     } | null>(null)
+
+    // ─── NPC Selection ─────────────────────────────────────────────
+
+    const selectedNpc = NPC_ENEMIES.find((e) => e.id === selectedNpcId)
+
+    const handleSelectNpc = (npcId: string) => {
+        setSelectedNpcId(npcId)
+        setError(null)
+        setPhase('npc_menu')
+    }
+
+    const handleStartChat = () => {
+        if (!selectedNpc) return
+        setChatStep(0)
+        setChatHistory([{ sender: 'npc', text: selectedNpc.dialogue.greeting }])
+        setPhase('chatting')
+    }
+
+    const handleChatReply = (replyText: string) => {
+        if (!selectedNpc) return
+        const dialogue = selectedNpc.dialogue
+        const newHistory = [...chatHistory, { sender: 'player' as const, text: replyText }]
+
+        if (chatStep < dialogue.lines.length) {
+            newHistory.push({ sender: 'npc', text: dialogue.lines[chatStep].npc })
+            setChatHistory(newHistory)
+            setChatStep(chatStep + 1)
+        }
+
+        // If we've gone through all lines after this reply, show farewell
+        if (chatStep + 1 >= dialogue.lines.length) {
+            newHistory.push({ sender: 'npc', text: dialogue.farewell })
+            setChatHistory(newHistory)
+            setChatStep(dialogue.lines.length) // mark as finished
+        }
+    }
+
+    const chatFinished = selectedNpc ? chatStep >= selectedNpc.dialogue.lines.length : false
+    const currentReplies = selectedNpc && chatStep < selectedNpc.dialogue.lines.length
+        ? selectedNpc.dialogue.lines[chatStep].replies
+        : []
 
     // ─── Start combat ────────────────────────────────────────────────
 
@@ -304,12 +351,22 @@ export default function CombatContent({ player }: { player: Player }) {
 
     // ─── Reset ───────────────────────────────────────────────────────
 
-    const handleBackToEnemies = () => {
-        setPhase('select_enemy')
+    const handleBackToNpcs = () => {
+        setPhase('select_npc')
+        setSelectedNpcId(null)
         setResult(null)
         setTurnLog([])
         setError(null)
+        setChatHistory([])
+        setChatStep(0)
         router.refresh()
+    }
+
+    const handleBackToNpcMenu = () => {
+        setPhase('npc_menu')
+        setChatHistory([])
+        setChatStep(0)
+        setError(null)
     }
 
     // ─── Render ──────────────────────────────────────────────────────
@@ -317,12 +374,12 @@ export default function CombatContent({ player }: { player: Player }) {
     return (
         <div className="space-y-6">
             {/* Hospital Banner */}
-            {player.isHospitalized && phase === 'select_enemy' && (
+            {player.isHospitalized && phase === 'select_npc' && (
                 <Alert variant="destructive">
                     <HeartPulseIcon className="size-4" />
-                    <AlertTitle>Hospitalized</AlertTitle>
+                    <AlertTitle>Dirawat di Rumah Sakit</AlertTitle>
                     <AlertDescription>
-                        You are in the hospital. You cannot fight until you are discharged.
+                        Kamu sedang dirawat. Kamu tidak bisa bertarung sampai keluar dari rumah sakit.
                     </AlertDescription>
                 </Alert>
             )}
@@ -335,72 +392,196 @@ export default function CombatContent({ player }: { player: Player }) {
                 </Alert>
             )}
 
-            {/* ═══ PHASE: SELECT ENEMY ═══ */}
-            {phase === 'select_enemy' && (
+            {/* ═══ PHASE: SELECT NPC ═══ */}
+            {phase === 'select_npc' && (
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <SwordsIcon className="size-5" />
-                            Choose Your Opponent
+                            <UsersIcon className="size-5" />
+                            Orang-orang di Sekitar
                         </CardTitle>
                         <CardDescription>
-                            Fight enemies to earn money, XP, and item drops. Beware — losing sends you to the hospital!
+                            Temui NPC di gang gelap. Kamu bisa mengajak mereka ngobrol atau menantang mereka bertarung.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            {NPC_ENEMIES.map((enemy) => {
-                                const locked = player.level < enemy.level
+                            {NPC_ENEMIES.map((npc) => {
+                                const locked = player.level < npc.level
                                 return (
                                     <div
-                                        key={enemy.id}
+                                        key={npc.id}
                                         className={`flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${locked ? 'opacity-50' : 'hover:border-primary/50'
                                             }`}
                                     >
                                         <div className="flex-1 space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold">{enemy.label}</h3>
+                                                <h3 className="font-semibold">{npc.label}</h3>
                                                 <Badge variant={locked ? 'secondary' : 'outline'} className="text-xs">
-                                                    Lv.{enemy.level}
+                                                    Lv.{npc.level}
                                                 </Badge>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">{enemy.description}</p>
-                                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                    <SwordsIcon className="size-3" /> STR {enemy.strength}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <ShieldIcon className="size-3" /> DEF {enemy.defense}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <ZapIcon className="size-3" /> SPD {enemy.speed}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <TargetIcon className="size-3" /> DEX {enemy.dexterity}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <HeartIcon className="size-3" /> HP {enemy.maxHealth}
-                                                </span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-x-3 text-xs">
-                                                <span className="text-green-600">💰 ${enemy.moneyDrop[0]}–${enemy.moneyDrop[1]}</span>
-                                                <span className="text-blue-600">⭐ {enemy.xpDrop} XP</span>
-                                                <span className="text-orange-600">⚡ {enemy.nerveCost} nerve</span>
-                                            </div>
+                                            <p className="text-sm text-muted-foreground">{npc.description}</p>
                                         </div>
                                         <Button
                                             variant={locked ? 'secondary' : 'default'}
                                             size="sm"
-                                            disabled={locked || isPending || player.isHospitalized || player.health <= 0}
-                                            onClick={() => handleStartCombat(enemy.id)}
+                                            disabled={locked || isPending}
+                                            onClick={() => handleSelectNpc(npc.id)}
                                             className="shrink-0"
                                         >
-                                            {isPending ? 'Starting...' : locked ? `Requires Lv.${enemy.level}` : 'Fight'}
+                                            {locked ? `Butuh Lv.${npc.level}` : 'Temui'}
                                         </Button>
                                     </div>
                                 )
                             })}
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ═══ PHASE: NPC MENU ═══ */}
+            {phase === 'npc_menu' && selectedNpc && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="size-8" onClick={handleBackToNpcs}>
+                                <ArrowLeftIcon className="size-4" />
+                            </Button>
+                            <div>
+                                <CardTitle className="text-base">{selectedNpc.label}</CardTitle>
+                                <CardDescription>{selectedNpc.description}</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {/* NPC Stats */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                                <SwordsIcon className="size-3" /> STR {selectedNpc.strength}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <ShieldIcon className="size-3" /> DEF {selectedNpc.defense}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <ZapIcon className="size-3" /> SPD {selectedNpc.speed}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <TargetIcon className="size-3" /> DEX {selectedNpc.dexterity}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <HeartIcon className="size-3" /> HP {selectedNpc.maxHealth}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 text-xs">
+                            <span className="text-green-600">💰 ${selectedNpc.moneyDrop[0]}–${selectedNpc.moneyDrop[1]}</span>
+                            <span className="text-blue-600">⭐ {selectedNpc.xpDrop} XP</span>
+                            <span className="text-orange-600">⚡ {selectedNpc.nerveCost} nerve</span>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex flex-col gap-1 h-auto py-4"
+                                onClick={handleStartChat}
+                            >
+                                <MessageCircleIcon className="size-5" />
+                                <span className="text-sm font-medium">Ngobrol</span>
+                                <span className="text-[10px] text-muted-foreground">Ajak bicara</span>
+                            </Button>
+                            <Button
+                                variant="default"
+                                className="flex flex-col gap-1 h-auto py-4"
+                                disabled={isPending || player.isHospitalized || player.health <= 0}
+                                onClick={() => handleStartCombat(selectedNpc.id)}
+                            >
+                                <SwordsIcon className="size-5" />
+                                <span className="text-sm font-medium">Tantang</span>
+                                <span className="text-[10px] opacity-70">Ajak berantem</span>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ═══ PHASE: CHATTING ═══ */}
+            {phase === 'chatting' && selectedNpc && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="size-8" onClick={handleBackToNpcMenu}>
+                                <ArrowLeftIcon className="size-4" />
+                            </Button>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <MessageCircleIcon className="size-5" />
+                                Ngobrol dengan {selectedNpc.label}
+                            </CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {/* Chat history */}
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                            {chatHistory.map((msg, i) => (
+                                <div
+                                    key={i}
+                                    className={`flex ${msg.sender === 'player' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div
+                                        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === 'npc'
+                                            ? 'bg-muted text-foreground rounded-bl-md'
+                                            : 'bg-primary text-primary-foreground rounded-br-md'
+                                            }`}
+                                    >
+                                        {msg.sender === 'npc' && (
+                                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">
+                                                {selectedNpc.label}
+                                            </p>
+                                        )}
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Reply options */}
+                        {!chatFinished && currentReplies.length > 0 && (
+                            <div className="space-y-2 border-t pt-3">
+                                <p className="text-xs text-muted-foreground">Pilih balasan:</p>
+                                {currentReplies.map((reply, i) => (
+                                    <Button
+                                        key={i}
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start text-left h-auto py-2 text-sm whitespace-normal"
+                                        onClick={() => handleChatReply(reply)}
+                                    >
+                                        {reply}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Chat finished */}
+                        {chatFinished && (
+                            <div className="border-t pt-3 space-y-3">
+                                <p className="text-sm text-muted-foreground text-center">
+                                    Percakapan selesai.
+                                </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button variant="outline" onClick={handleBackToNpcs}>
+                                        Kembali
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleStartCombat(selectedNpc.id)}
+                                        disabled={isPending || player.isHospitalized || player.health <= 0}
+                                    >
+                                        <SwordsIcon className="size-4 mr-2" />
+                                        Tantang
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             )}
@@ -624,8 +805,8 @@ export default function CombatContent({ player }: { player: Player }) {
                         </details>
                     )}
 
-                    <Button onClick={handleBackToEnemies} className="w-full">
-                        {result.hospitalized ? 'Go to Hospital' : 'Back to Enemies'}
+                    <Button onClick={handleBackToNpcs} className="w-full">
+                        {result.hospitalized ? 'Ke Rumah Sakit' : 'Kembali ke NPC'}
                     </Button>
                 </>
             )}

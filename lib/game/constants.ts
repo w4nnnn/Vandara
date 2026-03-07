@@ -174,6 +174,12 @@ export const ITEMS: Record<string, ItemDef> = {
 
 // ─── NPC ENEMIES ──────────────────────────────────────────────────
 
+export interface NpcDialogue {
+  greeting: string
+  lines: { npc: string; replies: string[] }[]
+  farewell: string
+}
+
 export interface NpcEnemy {
   id: string
   label: string
@@ -188,6 +194,7 @@ export interface NpcEnemy {
   nerveCost: number
   itemDrops?: { itemId: string; chance: number }[]
   description: string
+  dialogue: NpcDialogue
 }
 
 export const NPC_ENEMIES: NpcEnemy[] = [
@@ -199,6 +206,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [10, 50], xpDrop: 5, nerveCost: 2,
     itemDrops: [{ itemId: 'old_watch', chance: 0.2 }],
     description: 'A petty thief lurking in back alleys.',
+    dialogue: {
+      greeting: 'Heh, kamu lagi apa di sini? Tempat ini nggak aman buat orang kayak kamu.',
+      lines: [
+        { npc: 'Gue udah di jalanan sejak kecil. Nggak ada yang peduli sama gue.', replies: ['Ceritain dong gimana hidupmu dulu.', 'Pasti berat ya hidup di jalanan.'] },
+        { npc: 'Yah, mau gimana lagi. Ngambil dompet orang itu satu-satunya cara buat makan.', replies: ['Nggak ada kerjaan lain?', 'Hati-hati, nanti ketangkep.'] },
+        { npc: 'Kalau ada yang mau nerima gue kerja, mungkin gue bakal berubah. Tapi siapa yang mau?', replies: ['Semoga suatu hari nanti ada yang kasih kesempatan.', 'Gue doain lo bisa berubah.'] },
+      ],
+      farewell: 'Udah ah, gue mau pergi. Jangan bilang siapa-siapa lo ketemu gue di sini.',
+    },
   },
   {
     id: 'street_thug',
@@ -208,6 +224,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [30, 100], xpDrop: 12, nerveCost: 3,
     itemDrops: [{ itemId: 'scrap_metal', chance: 0.3 }],
     description: 'A rough street fighter with a bad attitude.',
+    dialogue: {
+      greeting: 'Apa lihat-lihat? Mau cari masalah?',
+      lines: [
+        { npc: 'Gue nggak suka orang yang sok jagoan di area gue.', replies: ['Tenang, gue cuma lewat kok.', 'Area lo? Emang siapa lo?'] },
+        { npc: 'Hahaha, santai aja. Gue cuma bercanda. Tapi serius, jangan macem-macem.', replies: ['Oke, gue nggak cari masalah.', 'Lo juga jangan cari masalah sama gue.'] },
+        { npc: 'Lo tahu nggak, dulunya gue petinju amatir. Tapi karena masalah, gue keluar dari ring.', replies: ['Wah, sayang banget. Kenapa bisa?', 'Pantesan pukulan lo kelihatan terlatih.'] },
+      ],
+      farewell: 'Udahan ngobrolnya. Gue mau balik ke pojokan gue.',
+    },
   },
   {
     id: 'mugger',
@@ -217,6 +242,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [80, 200], xpDrop: 25, nerveCost: 4,
     itemDrops: [{ itemId: 'scrap_metal', chance: 0.25 }, { itemId: 'nerve_pill', chance: 0.1 }],
     description: 'Armed and dangerous, he wants your wallet.',
+    dialogue: {
+      greeting: 'Jangan bergerak. Serahin barang berharga lo... eh, becanda. Santai.',
+      lines: [
+        { npc: 'Hidup di jalanan itu keras, bro. Lo harus ambil apa yang lo bisa.', replies: ['Tapi ngerampok itu salah, kan?', 'Gue paham, hidup emang susah.'] },
+        { npc: 'Gue punya keluarga yang harus gue kasih makan. Ini satu-satunya cara.', replies: ['Coba cari kerjaan yang halal.', 'Kasian keluarga lo kalau lo ketangkep.'] },
+        { npc: 'Kadang gue mikir, apa hidup gue bakal berubah kalau gue punya kesempatan kedua.', replies: ['Nggak ada kata terlambat buat berubah.', 'Semua orang punya kesempatan.'] },
+      ],
+      farewell: 'Gue pergi dulu. Dan... makasih udah mau dengerin gue.',
+    },
   },
   {
     id: 'gang_member',
@@ -226,6 +260,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [150, 400], xpDrop: 45, nerveCost: 5,
     itemDrops: [{ itemId: 'small_potion', chance: 0.15 }],
     description: 'A loyal soldier of the local gang.',
+    dialogue: {
+      greeting: 'Yo, lo kenal gue nggak? Gue salah satu anak buah bos besar.',
+      lines: [
+        { npc: 'Gue masuk geng ini sejak umur 15. Di sini gue punya keluarga.', replies: ['Kenapa milih jalan ini?', 'Lo nggak takut risikonya?'] },
+        { npc: 'Risiko? Hah, hidup itu sendirinya udah risiko. Setidaknya di sini gue punya orang-orang yang jagain gue.', replies: ['Gue ngerti soal loyalitas.', 'Tapi ada cara lain untuk punya keluarga.'] },
+        { npc: 'Mungkin lo bener. Tapi sekarang udah terlambat buat gue keluar.', replies: ['Nggak pernah terlambat.', 'Semoga lo selamat aja, bro.'] },
+      ],
+      farewell: 'Gue harus balik. Bos manggil. Hati-hati di sini.',
+    },
   },
   {
     id: 'hired_muscle',
@@ -235,6 +278,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [300, 700], xpDrop: 80, nerveCost: 7,
     itemDrops: [{ itemId: 'energy_drink', chance: 0.2 }, { itemId: 'small_potion', chance: 0.15 }],
     description: 'A professional enforcer. Don\'t take him lightly.',
+    dialogue: {
+      greeting: '*menatap tajam* Lo punya nyali datang ke sini.',
+      lines: [
+        { npc: 'Gue dibayar mahal buat "menyelesaikan masalah". Itu aja yang perlu lo tahu.', replies: ['Seram juga kerjaan lo.', 'Berapa sih bayarannya?'] },
+        { npc: 'Cukup buat hidup nyaman. Tapi kadang... gue nggak bisa tidur. Banyak yang ngehantuin.', replies: ['Lo pernah ngerasa bersalah?', 'Mungkin lo butuh istirahat dari semua ini.'] },
+        { npc: 'Bersalah? Gue profesional. Tapi... ya, kadang gue mikir juga.', replies: ['Semua orang punya batas.', 'Lo masih punya hati, itu bagus.'] },
+      ],
+      farewell: '*mengangguk pelan* Lo orang yang menarik. Pergi sebelum ada yang lihat kita ngobrol.',
+    },
   },
   {
     id: 'arms_dealer',
@@ -244,6 +296,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [500, 1200], xpDrop: 130, nerveCost: 9,
     itemDrops: [{ itemId: 'large_potion', chance: 0.1 }],
     description: 'He sells weapons to the underworld. Well armed.',
+    dialogue: {
+      greeting: 'Psst... mau lihat-lihat barang dagangan gue? Semua kualitas premium.',
+      lines: [
+        { npc: 'Gue udah di bisnis ini 20 tahun. Nggak ada senjata yang nggak gue kenal.', replies: ['Gimana awalnya lo bisa jual senjata?', 'Lo nggak takut sama polisi?'] },
+        { npc: 'Polisi? Hah, beberapa dari mereka justru pelanggan gue. Dunia ini nggak sehitam-putih yang lo pikir.', replies: ['Wah, korup banget.', 'Gue nggak kaget sih.'] },
+        { npc: 'Suatu hari gue mau pensiun, buka toko senjata yang legal. Tapi itu masih lama.', replies: ['Semoga tercapai impian lo.', 'Mending mulai dari sekarang.'] },
+      ],
+      farewell: 'Kalau butuh sesuatu, lo tahu di mana cari gue. Tapi jangan bawa polisi.',
+    },
   },
   {
     id: 'mob_enforcer',
@@ -253,6 +314,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [800, 2000], xpDrop: 200, nerveCost: 11,
     itemDrops: [{ itemId: 'large_potion', chance: 0.15 }, { itemId: 'protein_shake', chance: 0.1 }],
     description: 'The mob\'s right hand. Few have lived to tell the tale.',
+    dialogue: {
+      greeting: '*duduk di kursi sambil merokok* Jarang ada yang berani nyamperin gue.',
+      lines: [
+        { npc: 'Gue udah ngabdi ke bos 15 tahun. Semua yang dia mau, gue lakuin.', replies: ['Lo setia banget sama bos lo.', 'Apa lo nggak pernah mau jadi bos sendiri?'] },
+        { npc: 'Jadi bos? Nggak, makasih. Tanggung jawabnya terlalu berat. Gue lebih suka eksekusi di lapangan.', replies: ['Setiap orang punya perannya masing-masing.', 'Lo pinter juga, tahu posisi lo.'] },
+        { npc: 'Yang bikin gue bertahan itu keluarga gue. Mereka nggak tahu apa kerjaan gue yang sebenarnya.', replies: ['Pasti berat nyimpen rahasia itu.', 'Suatu saat mereka bakal tahu.'] },
+      ],
+      farewell: '*mematikan rokok* Obrolan yang menarik. Sekarang pergi, sebelum orang-orang curiga.',
+    },
   },
   {
     id: 'crime_boss',
@@ -262,6 +332,15 @@ export const NPC_ENEMIES: NpcEnemy[] = [
     moneyDrop: [1500, 5000], xpDrop: 400, nerveCost: 15,
     itemDrops: [{ itemId: 'large_potion', chance: 0.2 }, { itemId: 'protein_shake', chance: 0.15 }],
     description: 'The kingpin. Only the strongest dare challenge him.',
+    dialogue: {
+      greeting: '*mengangkat gelas whisky* Ah, tamu yang tidak diundang. Tapi tidak apa-apa, duduklah.',
+      lines: [
+        { npc: 'Kamu tahu kenapa aku bisa di posisi ini? Bukan karena kekerasan. Tapi karena otak.', replies: ['Lo emang pinter, gue akuin.', 'Tapi lo tetap kriminal.'] },
+        { npc: 'Kriminal? Label itu relatif. Aku memberi pekerjaan ke ratusan orang. Aku jaga keamanan wilayah ini.', replies: ['Tapi dengan cara yang salah.', 'Ada benarnya juga sih.'] },
+        { npc: 'Suatu hari, semua ini akan berakhir. Dan aku harus siap menghadapi konsekuensinya.', replies: ['Lo udah siap?', 'Masih ada waktu buat berubah.'] },
+      ],
+      farewell: '*tersenyum tipis* Kamu menarik. Tidak banyak orang yang berani bicara terang-terangan denganku. Sampai jumpa.',
+    },
   },
 ]
 
@@ -304,7 +383,7 @@ export const LOCATIONS: Record<LocationId, GameLocation> = {
     label: 'Dark Alley',
     description: 'A dangerous part of town. Watch your back.',
     icon: '🌑',
-    facilities: ['Combat'],
+    facilities: ['NPC'],
   },
   hospital: {
     id: 'hospital',
