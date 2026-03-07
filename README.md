@@ -1,119 +1,86 @@
 # My Game
 
-A single-player browser RPG inspired by Torn City, built with Next.js,
-React, and PostgreSQL.
+A single-player browser RPG inspired by Torn City, built with Next.js, React, and PostgreSQL.
 
-Create a character with a custom avatar, fight enemies in turn-based
-combat, train at the gym, work jobs to earn money, and manage your
-inventory — all from your browser.
+Forge your destiny in a persistent world: customize your character, train your attributes, engage in dynamic combat, and build a real estate empire.
 
-## Features
+## 🚀 Features
 
-- **Character creation** — name your character and customize a unique
-  SVG avatar with 13 options (hairstyle, clothes, face, skin, etc.)
-- **Immersive Game UI** — features a sticky top HUD bar displaying
-  real-time stat regeneration (Health, Energy, Nerve, Happy) and
-  location, with a mobile-friendly bottom navigation bar
-- **Dashboard** — view your battle stats, XP progress, and balance
-  at a glance
-- **Combat (PvE)** — turn-based fights against 8 NPC enemies
-  (Pickpocket → Crime Boss) with 4 actions: Attack, Heavy Attack,
-  Defend, and Flee. Earn money, XP, and item drops from victories
-- **Hospital** — get hospitalized when defeated in combat; live
-  countdown timer blocks all activities until you recover
-- **Real-time stat regen** — energy, nerve, health, and happiness
-  regenerate automatically over time with client-side countdown timers
-- **Gym** — train Strength, Defense, Speed, or Dexterity using energy
-- **Jobs** — apply for jobs (Grocer → Doctor), work to earn money and
-  XP, level up to unlock better positions
-- **Inventory & shop** — buy consumables (energy drinks, potions),
-  use items to restore stats, sell loot for cash
+### Core Gameplay
+- **Character Creation & Customization** — Choose your name and design a unique SVG avatar using the Avataaars system with 13+ customizable features.
+- **Dynamic NPC System** — Fight against time-seeded, procedurally generated NPCs. Every hour brings new enemies with unique stats, names, and visual appearances.
+- **Battle Stats & Training** — Train Strength, Defense, Speed, and Dexterity in the Gym to climb the ranks.
+- **Combat (PvE)** — Tactical turn-based combat featuring status effects, critical hits, and procedural loot drops.
+- **Career Path** — Work jobs ranging from a local Grocer to a high-earning Doctor. Rank up to unlock better pay and XP rewards.
 
-## Tech stack
+### Exploration & Economy
+- **Multi-Location Travel** — Explore the City Center, Gym District, Business District, Dark Alley, and Hospital. Each location unlocks unique facilities.
+- **Scavenging System** — Search areas for loot. Every location has unique loot tables (found cash in City Center, scrap in Dark Alley, medical supplies in the Hospital).
+- **Contextual Shops** — Visit the **General Store** in the City Center for basics, or find the **Black Market** in the Dark Alley for elite boosters (with location-specific pricing).
+- **Real Estate & Passive Income** — Buy properties like Apartment Complexes, Office Buildings, or Nightclubs to generate passive income hourly.
+- **Random Encounters** — Watch out during travel! 1% chance for random events like finding dropped money or getting mugged on the way.
+
+### Immersive Systems
+- **Location Buffs & Risks** — Your current location matters. Get 2x Health regeneration in the Hospital, 2x Happy regeneration in the City Center, or risk being pickpocketed in the Dark Alley.
+- **Real-time Synchronization** — Energy, Nerve, Health, and Happiness regenerate automatically in the background using server-verified timestamps.
+- **Professional UI** — Built with **Lucide React** icons and a sleek, dashboard-style interface optimized for both mobile and desktop.
+
+## 🛠️ Tech Stack
 
 | Layer      | Technology                          |
 |------------|-------------------------------------|
 | Framework  | Next.js 16 (App Router, Turbopack)  |
 | UI         | React 19, shadcn/ui, Tailwind CSS 4 |
+| Icons      | Lucide React                        |
 | Database   | PostgreSQL + Drizzle ORM            |
 | Avatar     | Avataaars SVG components            |
 | Language   | TypeScript 5                        |
 
-## Getting started
+## 🚦 Getting Started
 
 ### Prerequisites
-
 - Node.js 20+
-- PostgreSQL database (local or hosted)
+- PostgreSQL database
 
 ### Installation
-
 1. Clone the repository and install dependencies:
-
    ```bash
    npm install
    ```
-
-2. Copy the environment template and fill in your database URL:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edit `.env` and set `DATABASE_URL` to your PostgreSQL connection
-   string:
-
-   ```
-   DATABASE_URL=postgresql://user:password@localhost:5432/mygame
-   ```
-
+2. Copy `.env.example` to `.env` and set your `DATABASE_URL`.
 3. Push the database schema:
-
    ```bash
    npx drizzle-kit push
    ```
-
 4. Start the development server:
-
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Project structure
+## 📂 Project Structure
 
 ```
 app/
-  page.tsx                  # Landing page (redirects)
-  create/page.tsx           # Character creation
+  actions/                  # Server actions (combat, scavenging, properties, etc.)
   (game)/
-    layout.tsx              # Game shell with top HUD & bottom nav
-    dashboard/              # Stats overview + regen timers
-    combat/                 # Turn-based PvE combat
-    gym/                    # Train battle stats
-    hospital/               # Hospital countdown & recovery
-    inventory/              # Items, shop, use/sell
-    jobs/                   # Apply & work jobs
-app/actions/                # Server actions (character, combat, gym, jobs, inventory)
-lib/db/                     # Drizzle schema & connection
-lib/game/
-  constants.ts              # XP formulas, exercises, jobs, items, NPC enemies
-  regen.ts                  # Server-side stat regeneration logic
-components/game/            # Game UI components (regen timer)
-components/ui/              # shadcn/ui components
-avataaars-assets/           # SVG avatar component library
+    dashboard/              # Stats overview
+    travel/                 # Multi-location navigation
+    scavenge/               # Looting system
+    shop/                   # Location-based trade
+    properties/             # Real estate dashboard
+    npc/                    # Dynamic enemy encounters
+    gym/                    # Attribute training
+lib/
+  db/                       # Schema & Drizzle setup
+  game/
+    npc-generator.ts        # Time-seeded PRNG engine
+    regen.ts                # Background stat calculation
+    constants.ts            # Game balance & metadata
+components/
+  game/                     # Specialized gameplay components
+  ui/                       # Layout & primitives
 ```
 
-## Scripts
-
-| Command                | Description                     |
-|------------------------|---------------------------------|
-| `npm run dev`          | Start dev server with Turbopack |
-| `npm run build`        | Production build                |
-| `npm start`            | Start production server         |
-| `npx drizzle-kit push` | Push schema changes to DB      |
-
-## License
-
+## 📜 License
 Private project.
+

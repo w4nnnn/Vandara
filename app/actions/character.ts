@@ -163,8 +163,16 @@ export async function getPlayer() {
   }
 
   // Apply stat regeneration based on elapsed time
-  const regen = applyRegen({ ...player, updatedAt: isHospitalized ? now : player.updatedAt })
+  const regen = applyRegen({ ...player, currentLocation, updatedAt: isHospitalized ? now : player.updatedAt })
+
   if (regen.changed) {
+    let finalEncounterMsg = player.lastEncounterMsg
+    let finalMoney = Number(player.money) - regen.moneyLost
+
+    if (regen.moneyLost > 0) {
+      finalEncounterMsg = `Someone pickpocketed you while you were idling in the Dark Alley! You lost $${regen.moneyLost}.`
+    }
+
     await db
       .update(players)
       .set({
@@ -172,9 +180,14 @@ export async function getPlayer() {
         nerve: regen.nerve,
         health: regen.health,
         happy: regen.happy,
+        money: finalMoney,
+        lastEncounterMsg: finalEncounterMsg,
         updatedAt: new Date(),
       })
       .where(eq(players.id, player.id))
+
+    player.money = finalMoney
+    player.lastEncounterMsg = finalEncounterMsg
   }
 
   const avatar = await db.query.playerAvatars.findFirst({
@@ -183,6 +196,7 @@ export async function getPlayer() {
 
   return {
     ...player,
+    money: Number(player.money),
     energy: regen.energy,
     nerve: regen.nerve,
     health: regen.health,

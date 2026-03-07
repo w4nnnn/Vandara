@@ -40,6 +40,7 @@ export type PlayerForRegen = {
     happy: number
     maxHappy: number
     updatedAt: Date
+    currentLocation?: string
 }
 
 export type RegenResult = {
@@ -47,6 +48,7 @@ export type RegenResult = {
     nerve: number
     health: number
     happy: number
+    moneyLost: number
     changed: boolean
 }
 
@@ -58,7 +60,27 @@ export function applyRegen(player: PlayerForRegen, now: Date = new Date()): Rege
             nerve: player.nerve,
             health: player.health,
             happy: player.happy,
+            moneyLost: 0,
             changed: false,
+        }
+    }
+
+    // Location-based modifiers
+    let healthRateMult = 1
+    let happyRateMult = 1
+    let moneyLost = 0
+
+    if (player.currentLocation === 'hospital') {
+        healthRateMult = 2 // 2x Health regen in hospital
+    } else if (player.currentLocation === 'city_center') {
+        happyRateMult = 2 // 2x Happy regen in city center
+    } else if (player.currentLocation === 'dark_alley') {
+        // 1% risk of losing $10-50 per 5 min interval while in Dark Alley
+        const ticks = Math.floor(elapsed / (5 * 60 * 1000))
+        for (let i = 0; i < ticks; i++) {
+            if (Math.random() < 0.01) {
+                moneyLost += Math.floor(Math.random() * 41) + 10
+            }
         }
     }
 
@@ -79,24 +101,25 @@ export function applyRegen(player: PlayerForRegen, now: Date = new Date()): Rege
     const healthGain = regenAmount(elapsed, {
         current: player.health,
         max: player.maxHealth,
-        rate: HEALTH_REGEN_RATE,
+        rate: HEALTH_REGEN_RATE * healthRateMult,
         intervalMs: HEALTH_REGEN_INTERVAL_MS,
     })
 
     const happyGain = regenAmount(elapsed, {
         current: player.happy,
         max: player.maxHappy,
-        rate: HAPPY_REGEN_RATE,
+        rate: HAPPY_REGEN_RATE * happyRateMult,
         intervalMs: HAPPY_REGEN_INTERVAL_MS,
     })
 
-    const changed = energyGain > 0 || nerveGain > 0 || healthGain > 0 || happyGain > 0
+    const changed = energyGain > 0 || nerveGain > 0 || healthGain > 0 || happyGain > 0 || moneyLost > 0
 
     return {
         energy: player.energy + energyGain,
         nerve: player.nerve + nerveGain,
         health: player.health + healthGain,
         happy: player.happy + happyGain,
+        moneyLost,
         changed,
     }
 }

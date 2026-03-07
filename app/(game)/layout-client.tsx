@@ -83,6 +83,7 @@ const NAV_ITEMS = [
   { label: 'Travel', href: '/travel', icon: PlaneIcon, activity: null },
   { label: 'Scavenge', href: '/scavenge', icon: SearchIcon, activity: null },
   { label: 'Shop', href: '/shop', icon: StoreIcon, activity: null },
+  { label: 'Estate', href: '/properties', icon: BuildingIcon, activity: null },
   { label: 'NPC', href: '/npc', icon: UsersIcon, activity: 'combat' as const },
   { label: 'Gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
   { label: 'Jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
