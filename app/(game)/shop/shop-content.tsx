@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ShoppingCartIcon, CoinsIcon, StoreIcon, SkullIcon, SparklesIcon, PackageIcon, HammerIcon } from 'lucide-react'
 import { buyShopItem, SHOP_INVENTORY } from '@/app/actions/shop'
 import { ITEMS, LOCATIONS, type LocationId, type ItemCategory } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type Player = {
     id: number
@@ -25,6 +26,7 @@ const CATEGORY_ICON: Record<ItemCategory, React.ElementType> = {
 export default function ShopContent({ player }: { player: Player }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const { t } = useTranslation()
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
 
     const availableItemIds = SHOP_INVENTORY[player.currentLocation] || []
@@ -35,7 +37,7 @@ export default function ShopContent({ player }: { player: Player }) {
         startTransition(async () => {
             const res = await buyShopItem(itemId, 1)
             if (res.error) setMessage({ text: res.error, type: 'error' })
-            else setMessage({ text: `Bought ${res.bought} for $${res.totalCost}`, type: 'success' })
+            else setMessage({ text: t('shop.bought', { item: res.bought ?? '', cost: String(res.totalCost ?? 0) }), type: 'success' })
             router.refresh()
         })
     }
@@ -47,10 +49,10 @@ export default function ShopContent({ player }: { player: Player }) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <StoreIcon className="size-5 text-muted-foreground" />
-                            No Shop Here
+                            {t('shop.noShop')}
                         </CardTitle>
                         <CardDescription>
-                            There are no vendors operating in this location. Head to the City Center or Dark Alley.
+                            {t('shop.noShopDesc')}
                         </CardDescription>
                     </CardHeader>
                 </Card>
@@ -66,16 +68,16 @@ export default function ShopContent({ player }: { player: Player }) {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 {isBlackMarket ? <SkullIcon className="size-5 text-red-500" /> : <StoreIcon className="size-5 text-primary" />}
-                                {isBlackMarket ? 'Black Market' : 'General Store'}
+                                {isBlackMarket ? t('shop.blackMarket') : t('shop.generalStore')}
                             </CardTitle>
                             <CardDescription>
                                 {isBlackMarket
-                                    ? "Shady goods at steep prices. No questions asked."
-                                    : "Basic necessities and recovery items for the everyday citizen."}
+                                    ? t('shop.blackDesc')
+                                    : t('shop.generalDesc')}
                             </CardDescription>
                         </div>
                         <div className="text-right">
-                            <div className="text-sm font-medium text-muted-foreground">Your Balance</div>
+                            <div className="text-sm font-medium text-muted-foreground">{t('shop.yourBalance')}</div>
                             <div className="flex items-center justify-end gap-1 text-lg font-bold text-emerald-400">
                                 <CoinsIcon className="size-4" />
                                 {Number(player.money).toLocaleString()}
@@ -104,13 +106,13 @@ export default function ShopContent({ player }: { player: Player }) {
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <CatIcon className="size-4 text-muted-foreground shrink-0" />
-                                            <p className="font-semibold">{def.label}</p>
+                                            <p className="font-semibold">{t(`item.${def.id}`)}</p>
                                             <Badge variant="secondary" className="text-[10px] uppercase">
-                                                {def.category}
+                                                {t(`shop.${def.category}`)}
                                             </Badge>
                                         </div>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
-                                            {def.description}
+                                            {t(`item.${def.id}.desc`)}
                                         </p>
                                     </div>
                                     <Button
@@ -121,7 +123,7 @@ export default function ShopContent({ player }: { player: Player }) {
                                         variant={isBlackMarket ? 'destructive' : 'default'}
                                     >
                                         <ShoppingCartIcon className="mr-2 size-4" />
-                                        Buy ${cost.toLocaleString()}
+                                        {t('shop.buy')} ${cost.toLocaleString()}
                                     </Button>
                                 </div>
                             )

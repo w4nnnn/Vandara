@@ -21,6 +21,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { startTravel } from '@/app/actions/travel'
 import { LOCATIONS, TRAVEL_TIMES, LOCATION_IDS, type LocationId } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type Player = {
     id: number
@@ -52,6 +53,7 @@ function formatCountdown(ms: number): string {
 export default function TravelContent({ player }: { player: Player }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const { t } = useTranslation()
     const [error, setError] = useState<string | null>(null)
 
     // Travel countdown
@@ -97,9 +99,9 @@ export default function TravelContent({ player }: { player: Player }) {
             {player.isHospitalized && (
                 <Alert variant="destructive">
                     <HeartPulseIcon className="size-4" />
-                    <AlertTitle>Hospitalized</AlertTitle>
+                    <AlertTitle>{t('hospital.beingTreated')}</AlertTitle>
                     <AlertDescription>
-                        You are in the hospital and cannot travel.
+                        {t('travel.cantTravel')}
                     </AlertDescription>
                 </Alert>
             )}
@@ -119,8 +121,8 @@ export default function TravelContent({ player }: { player: Player }) {
                         <div className="flex flex-col items-center gap-3 py-4 text-center">
                             <PlaneIcon className="size-8 text-primary animate-pulse" />
                             <div>
-                                <p className="text-lg font-semibold">Traveling to {travelingToLoc.label}...</p>
-                                <p className="text-sm text-muted-foreground">{travelingToLoc.description}</p>
+                                <p className="text-lg font-semibold">{t('travel.headingTo', { location: t(`loc.${player.travelingTo}`) })}</p>
+                                <p className="text-sm text-muted-foreground">{t(`loc.${player.travelingTo}.desc`)}</p>
                             </div>
                             <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
                                 <ClockIcon className="size-5 text-muted-foreground" />
@@ -148,15 +150,15 @@ export default function TravelContent({ player }: { player: Player }) {
                             <div>
                                 <p className="font-semibold flex items-center gap-1.5">
                                     {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-4 text-muted-foreground" /> })()}
-                                    {currentLoc?.label ?? player.currentLocation}
+                                    {currentLoc ? t(`loc.${currentLoc.id}`) : player.currentLocation}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    {currentLoc?.description}
+                                    {currentLoc ? t(`loc.${currentLoc.id}.desc`) : ''}
                                 </p>
                                 {currentLoc?.facilities && (
                                     <div className="mt-1 flex gap-1.5">
                                         {currentLoc.facilities.map((f) => (
-                                            <Badge key={f} variant="secondary" className="text-xs">{f}</Badge>
+                                            <Badge key={f} variant="secondary" className="text-xs">{t(`facility.${f}`)}</Badge>
                                         ))}
                                     </div>
                                 )}
@@ -171,10 +173,10 @@ export default function TravelContent({ player }: { player: Player }) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                         <PlaneIcon className="size-5" />
-                        Destinations
+                        {t('travel.destinations')}
                     </CardTitle>
                     <CardDescription>
-                        Travel to a location to access its facilities.
+                        {t('travel.destinationsDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -195,18 +197,18 @@ export default function TravelContent({ player }: { player: Player }) {
                                             <div className="flex shrink-0 items-center justify-center rounded-md bg-muted p-1.5 text-muted-foreground border">
                                                 {(() => { const Icon = LOCATION_ICONS[loc.id]; return <Icon className="size-4" /> })()}
                                             </div>
-                                            <h3 className="font-semibold">{loc.label}</h3>
+                                            <h3 className="font-semibold">{t(`loc.${loc.id}`)}</h3>
                                             {isCurrent && (
                                                 <Badge className="gap-1 text-xs">
                                                     <CheckCircleIcon className="size-3" />
-                                                    You are here
+                                                    {t('travel.youAreHere')}
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="text-sm text-muted-foreground">{loc.description}</p>
+                                        <p className="text-sm text-muted-foreground">{t(`loc.${loc.id}.desc`)}</p>
                                         <div className="flex gap-1.5">
                                             {loc.facilities.map((f) => (
-                                                <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
+                                                <Badge key={f} variant="outline" className="text-xs">{t(`facility.${f}`)}</Badge>
                                             ))}
                                         </div>
                                     </div>
@@ -223,7 +225,7 @@ export default function TravelContent({ player }: { player: Player }) {
                                             disabled={isCurrent || isTraveling || isPending || player.isHospitalized}
                                             onClick={() => handleTravel(locId)}
                                         >
-                                            {isPending ? 'Traveling...' : isCurrent ? 'Here' : 'Travel'}
+                                            {isPending ? t('travel.traveling') : isCurrent ? t('travel.here') : t('travel.go')}
                                         </Button>
                                     </div>
                                 </div>

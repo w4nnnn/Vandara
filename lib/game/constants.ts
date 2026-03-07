@@ -110,18 +110,18 @@ export interface GymExercise {
 }
 
 export const GYM_EXERCISES: GymExercise[] = [
-  { id: 'punch_bag', label: 'Punching Bag', stat: 'strength', energyCost: 5, baseGain: 1, description: 'Hit the bag to build raw strength.' },
-  { id: 'bench_press', label: 'Bench Press', stat: 'strength', energyCost: 10, baseGain: 3, description: 'Heavy presses for serious gains.' },
-  { id: 'deadlift', label: 'Deadlift', stat: 'strength', energyCost: 15, baseGain: 5, description: 'The king of strength exercises.' },
-  { id: 'dodge_drill', label: 'Dodge Drill', stat: 'defense', energyCost: 5, baseGain: 1, description: 'Practice dodging incoming attacks.' },
-  { id: 'sparring', label: 'Sparring', stat: 'defense', energyCost: 10, baseGain: 3, description: 'Spar with a partner to harden your defense.' },
-  { id: 'iron_body', label: 'Iron Body', stat: 'defense', energyCost: 15, baseGain: 5, description: 'Condition your body to resist damage.' },
-  { id: 'sprints', label: 'Sprints', stat: 'speed', energyCost: 5, baseGain: 1, description: 'Short bursts of explosive speed.' },
-  { id: 'hurdles', label: 'Hurdles', stat: 'speed', energyCost: 10, baseGain: 3, description: 'Build agility and speed together.' },
-  { id: 'wind_sprints', label: 'Wind Sprints', stat: 'speed', energyCost: 15, baseGain: 5, description: 'Push your legs to the limit.' },
-  { id: 'target_practice', label: 'Target Practice', stat: 'dexterity', energyCost: 5, baseGain: 1, description: 'Improve hand-eye coordination.' },
-  { id: 'juggling', label: 'Juggling', stat: 'dexterity', energyCost: 10, baseGain: 3, description: 'Sharp reflexes through complex motions.' },
-  { id: 'obstacle_course', label: 'Obstacle Course', stat: 'dexterity', energyCost: 15, baseGain: 5, description: 'Full-body dexterity training.' },
+  { id: 'punch_bag', label: 'Samsak Tinju', stat: 'strength', energyCost: 5, baseGain: 1, description: 'Pukul samsak untuk melatih kekuatan.' },
+  { id: 'bench_press', label: 'Bench Press', stat: 'strength', energyCost: 10, baseGain: 3, description: 'Angkat beban berat untuk peningkatan serius.' },
+  { id: 'deadlift', label: 'Deadlift', stat: 'strength', energyCost: 15, baseGain: 5, description: 'Raja dari latihan kekuatan.' },
+  { id: 'dodge_drill', label: 'Latihan Menghindar', stat: 'defense', energyCost: 5, baseGain: 1, description: 'Berlatih menghindari serangan.' },
+  { id: 'sparring', label: 'Sparring', stat: 'defense', energyCost: 10, baseGain: 3, description: 'Sparring dengan partner untuk menguatkan pertahanan.' },
+  { id: 'iron_body', label: 'Tubuh Baja', stat: 'defense', energyCost: 15, baseGain: 5, description: 'Latih tubuh untuk menahan damage.' },
+  { id: 'sprints', label: 'Sprint', stat: 'speed', energyCost: 5, baseGain: 1, description: 'Ledakan kecepatan dalam waktu singkat.' },
+  { id: 'hurdles', label: 'Lari Rintangan', stat: 'speed', energyCost: 10, baseGain: 3, description: 'Latih kelincahan dan kecepatan bersama.' },
+  { id: 'wind_sprints', label: 'Sprint Angin', stat: 'speed', energyCost: 15, baseGain: 5, description: 'Dorong kaki sampai batasnya.' },
+  { id: 'target_practice', label: 'Latihan Target', stat: 'dexterity', energyCost: 5, baseGain: 1, description: 'Tingkatkan koordinasi mata-tangan.' },
+  { id: 'juggling', label: 'Juggling', stat: 'dexterity', energyCost: 10, baseGain: 3, description: 'Refleks tajam melalui gerakan kompleks.' },
+  { id: 'obstacle_course', label: 'Parkour', stat: 'dexterity', energyCost: 15, baseGain: 5, description: 'Latihan ketangkasan seluruh tubuh.' },
 ]
 
 // ─── JOBS ─────────────────────────────────────────────────────────
@@ -137,13 +137,13 @@ export interface Job {
 }
 
 export const JOBS: Job[] = [
-  { id: 'grocer', label: 'Grocer', pay: 50, xp: 5, nerveCost: 2, levelRequired: 1, description: 'Stack shelves and ring up customers.' },
-  { id: 'cashier', label: 'Cashier', pay: 80, xp: 8, nerveCost: 3, levelRequired: 2, description: 'Handle transactions at a busy store.' },
-  { id: 'mechanic', label: 'Mechanic', pay: 150, xp: 15, nerveCost: 5, levelRequired: 5, description: 'Fix cars and earn decent money.' },
-  { id: 'security', label: 'Security Guard', pay: 250, xp: 20, nerveCost: 7, levelRequired: 8, description: 'Guard premises. Danger pay included.' },
-  { id: 'programmer', label: 'Programmer', pay: 400, xp: 30, nerveCost: 8, levelRequired: 12, description: 'Write code for a tech company.' },
-  { id: 'lawyer', label: 'Lawyer', pay: 700, xp: 50, nerveCost: 10, levelRequired: 18, description: 'Represent clients in court.' },
-  { id: 'doctor', label: 'Doctor', pay: 1000, xp: 75, nerveCost: 12, levelRequired: 25, description: 'Save lives and earn top dollar.' },
+  { id: 'grocer', label: 'Tukang Sayur', pay: 50, xp: 5, nerveCost: 2, levelRequired: 1, description: 'Tata rak dan layani pelanggan.' },
+  { id: 'cashier', label: 'Kasir', pay: 80, xp: 8, nerveCost: 3, levelRequired: 2, description: 'Tangani transaksi di toko ramai.' },
+  { id: 'mechanic', label: 'Montir', pay: 150, xp: 15, nerveCost: 5, levelRequired: 5, description: 'Perbaiki mobil dan dapatkan uang lumayan.' },
+  { id: 'security', label: 'Satpam', pay: 250, xp: 20, nerveCost: 7, levelRequired: 8, description: 'Jaga gedung. Termasuk tunjangan bahaya.' },
+  { id: 'programmer', label: 'Programmer', pay: 400, xp: 30, nerveCost: 8, levelRequired: 12, description: 'Tulis kode untuk perusahaan teknologi.' },
+  { id: 'lawyer', label: 'Pengacara', pay: 700, xp: 50, nerveCost: 10, levelRequired: 18, description: 'Wakili klien di pengadilan.' },
+  { id: 'doctor', label: 'Dokter', pay: 1000, xp: 75, nerveCost: 12, levelRequired: 25, description: 'Selamatkan nyawa dan dapatkan gaji tertinggi.' },
 ]
 
 // ─── ITEMS ────────────────────────────────────────────────────────
@@ -163,19 +163,19 @@ export interface ItemDef {
 }
 
 export const ITEMS: Record<string, ItemDef> = {
-  energy_drink: { id: 'energy_drink', label: 'Energy Drink', category: 'consumable', description: 'Restores 25 energy.', value: 100, effect: { stat: 'energy', amount: 25 } },
-  small_potion: { id: 'small_potion', label: 'Small Potion', category: 'consumable', description: 'Restores 50 health.', value: 200, effect: { stat: 'health', amount: 50 } },
-  large_potion: { id: 'large_potion', label: 'Large Potion', category: 'consumable', description: 'Restores 100 health.', value: 500, effect: { stat: 'health', amount: 100 } },
-  nerve_pill: { id: 'nerve_pill', label: 'Nerve Pill', category: 'consumable', description: 'Restores 10 nerve.', value: 150, effect: { stat: 'nerve', amount: 10 } },
-  happy_meal: { id: 'happy_meal', label: 'Happy Meal', category: 'consumable', description: 'Restores 30 happiness.', value: 120, effect: { stat: 'happy', amount: 30 } },
-  protein_shake: { id: 'protein_shake', label: 'Protein Shake', category: 'booster', description: 'Doubles gym gains for the next training.', value: 300 },
-  scrap_metal: { id: 'scrap_metal', label: 'Scrap Metal', category: 'material', description: 'Trade-in material worth some cash.', value: 25 },
-  old_watch: { id: 'old_watch', label: 'Old Watch', category: 'material', description: 'A collectable trinket.', value: 75 },
-  expensive_watch: { id: 'expensive_watch', label: 'Expensive Watch', category: 'material', description: 'Looks like real gold. Sells for a lot.', value: 500 },
-  briefcase: { id: 'briefcase', label: 'Briefcase', category: 'material', description: 'A sleek leather briefcase.', value: 150 },
-  rusty_shiv: { id: 'rusty_shiv', label: 'Rusty Shiv', category: 'material', description: 'Not much of a weapon, but a collector might buy it.', value: 40 },
-  bandages: { id: 'bandages', label: 'Bandages', category: 'consumable', description: 'Restores 20 health.', value: 50, effect: { stat: 'health', amount: 20 } },
-  medkit: { id: 'medkit', label: 'Medkit', category: 'consumable', description: 'Restores 75 health.', value: 300, effect: { stat: 'health', amount: 75 } },
+  energy_drink: { id: 'energy_drink', label: 'Minuman Energi', category: 'consumable', description: 'Memulihkan 25 energi.', value: 100, effect: { stat: 'energy', amount: 25 } },
+  small_potion: { id: 'small_potion', label: 'Ramuan Kecil', category: 'consumable', description: 'Memulihkan 50 kesehatan.', value: 200, effect: { stat: 'health', amount: 50 } },
+  large_potion: { id: 'large_potion', label: 'Ramuan Besar', category: 'consumable', description: 'Memulihkan 100 kesehatan.', value: 500, effect: { stat: 'health', amount: 100 } },
+  nerve_pill: { id: 'nerve_pill', label: 'Pil Keberanian', category: 'consumable', description: 'Memulihkan 10 keberanian.', value: 150, effect: { stat: 'nerve', amount: 10 } },
+  happy_meal: { id: 'happy_meal', label: 'Makanan Enak', category: 'consumable', description: 'Memulihkan 30 kebahagiaan.', value: 120, effect: { stat: 'happy', amount: 30 } },
+  protein_shake: { id: 'protein_shake', label: 'Protein Shake', category: 'booster', description: 'Gandakan hasil latihan gym berikutnya.', value: 300 },
+  scrap_metal: { id: 'scrap_metal', label: 'Besi Rongsokan', category: 'material', description: 'Bahan tukar yang bernilai uang.', value: 25 },
+  old_watch: { id: 'old_watch', label: 'Jam Tangan Lama', category: 'material', description: 'Barang koleksi kecil.', value: 75 },
+  expensive_watch: { id: 'expensive_watch', label: 'Jam Tangan Mahal', category: 'material', description: 'Terlihat seperti emas asli. Jual mahal.', value: 500 },
+  briefcase: { id: 'briefcase', label: 'Koper', category: 'material', description: 'Koper kulit yang elegan.', value: 150 },
+  rusty_shiv: { id: 'rusty_shiv', label: 'Pisau Karatan', category: 'material', description: 'Bukan senjata hebat, tapi kolektor mungkin mau beli.', value: 40 },
+  bandages: { id: 'bandages', label: 'Perban', category: 'consumable', description: 'Memulihkan 20 kesehatan.', value: 50, effect: { stat: 'health', amount: 20 } },
+  medkit: { id: 'medkit', label: 'Kotak P3K', category: 'consumable', description: 'Memulihkan 75 kesehatan.', value: 300, effect: { stat: 'health', amount: 75 } },
 }
 
 // ─── REAL ESTATE ──────────────────────────────────────────────────
@@ -192,27 +192,27 @@ export interface PropertyDef {
 export const PROPERTIES: Record<string, PropertyDef> = {
   apartment_complex: {
     id: 'apartment_complex',
-    label: 'Apartment Complex',
+    label: 'Komplek Apartemen',
     locationId: 'city_center',
     cost: 50000,
     incomePerHour: 500,
-    description: 'A modest block of flats providing steady rental income.',
+    description: 'Blok hunian sederhana dengan pendapatan sewa stabil.',
   },
   office_building: {
     id: 'office_building',
-    label: 'Office Building',
+    label: 'Gedung Perkantoran',
     locationId: 'business_district',
     cost: 250000,
     incomePerHour: 3000,
-    description: 'Commercial real estate leased to corporate tenants.',
+    description: 'Properti komersial yang disewakan ke penyewa korporat.',
   },
   nightclub: {
     id: 'nightclub',
-    label: 'The Neon Lotus Club',
+    label: 'Klub Neon Lotus',
     locationId: 'dark_alley',
     cost: 1000000,
     incomePerHour: 15000,
-    description: 'A booming underground nightclub pulling in massive cash.',
+    description: 'Klub malam bawah tanah yang menghasilkan uang besar.',
   },
 }
 
@@ -231,33 +231,33 @@ export interface Location {
 export const LOCATIONS: Record<LocationId, Location> = {
   city_center: {
     id: 'city_center',
-    label: 'City Center',
-    description: 'The heart of the city. A safe starting point.',
-    facilities: ['Dashboard', 'Inventory', 'Scavenge', 'Shop', 'Real Estate'],
+    label: 'Pusat Kota',
+    description: 'Jantung kota. Titik awal yang aman.',
+    facilities: ['Beranda', 'Inventaris', 'Memulung', 'Toko', 'Properti'],
   },
   gym_district: {
     id: 'gym_district',
-    label: 'Gym District',
-    description: 'A district full of training facilities and dojos.',
-    facilities: ['Gym', 'Scavenge'],
+    label: 'Distrik Gym',
+    description: 'Distrik penuh fasilitas latihan dan dojo.',
+    facilities: ['Gym', 'Memulung'],
   },
   business_district: {
     id: 'business_district',
-    label: 'Business District',
-    description: 'Corporate offices and job opportunities.',
-    facilities: ['Jobs', 'Scavenge', 'Real Estate'],
+    label: 'Distrik Bisnis',
+    description: 'Kantor perusahaan dan peluang kerja.',
+    facilities: ['Kerja', 'Memulung', 'Properti'],
   },
   dark_alley: {
     id: 'dark_alley',
-    label: 'Dark Alley',
-    description: 'A dangerous part of town. Watch your back.',
-    facilities: ['NPC', 'Scavenge', 'Shop', 'Real Estate'],
+    label: 'Gang Gelap',
+    description: 'Bagian kota yang berbahaya. Hati-hati.',
+    facilities: ['NPC', 'Memulung', 'Toko', 'Properti'],
   },
   hospital: {
     id: 'hospital',
-    label: 'Hospital',
-    description: 'The city hospital. Come here to recover.',
-    facilities: ['Hospital', 'Scavenge'],
+    label: 'Rumah Sakit',
+    description: 'Rumah sakit kota. Datang untuk pemulihan.',
+    facilities: ['Rumah Sakit', 'Memulung'],
   },
 }
 

@@ -12,6 +12,7 @@ import {
     CheckCircle2Icon, SwordsIcon, BackpackIcon,
     UsersIcon,
 } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n'
 
 type Player = {
     id: number
@@ -30,6 +31,7 @@ function formatTime(seconds: number): string {
 
 export default function HospitalContent({ player }: { player: Player }) {
     const router = useRouter()
+    const { t } = useTranslation()
     const [remainingSeconds, setRemainingSeconds] = useState(0)
 
     useEffect(() => {
@@ -63,10 +65,9 @@ export default function HospitalContent({ player }: { player: Player }) {
                     {/* Hospitalized State */}
                     <Alert variant="destructive">
                         <HeartPulseIcon className="size-4" />
-                        <AlertTitle>You are hospitalized</AlertTitle>
+                        <AlertTitle>{t('hospital.beingTreated')}</AlertTitle>
                         <AlertDescription>
-                            You were defeated in combat and need time to recover.
-                            All activities (gym, work, combat) are blocked until you are discharged.
+                            {t('hospital.treatmentDesc')}
                         </AlertDescription>
                     </Alert>
 
@@ -74,10 +75,10 @@ export default function HospitalContent({ player }: { player: Player }) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <ClockIcon className="size-5 text-red-500" />
-                                Recovery Timer
+                                {t('hospital.recoveryTimer')}
                             </CardTitle>
                             <CardDescription>
-                                You will be automatically discharged when the timer reaches zero.
+                                {t('hospital.autoRelease')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -85,7 +86,7 @@ export default function HospitalContent({ player }: { player: Player }) {
                                 <p className="text-5xl font-bold font-mono tabular-nums text-red-500">
                                     {formatTime(remainingSeconds)}
                                 </p>
-                                <p className="mt-1 text-sm text-muted-foreground">remaining</p>
+                                <p className="mt-1 text-sm text-muted-foreground">{t('hospital.remaining')}</p>
                             </div>
 
                             {/* Progress bar */}
@@ -96,7 +97,7 @@ export default function HospitalContent({ player }: { player: Player }) {
                                         className="h-3"
                                     />
                                     <p className="text-xs text-muted-foreground text-center">
-                                        Recovery progress
+                                        {t('hospital.recoveryProgress')}
                                     </p>
                                 </div>
                             )}
@@ -105,7 +106,7 @@ export default function HospitalContent({ player }: { player: Player }) {
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <span className="flex items-center gap-2 text-sm">
                                     <HeartIcon className="size-4 text-red-500" />
-                                    Health
+                                    {t('health')}
                                 </span>
                                 <span className="font-semibold text-red-500">
                                     {player.health} / {player.maxHealth}
@@ -116,16 +117,16 @@ export default function HospitalContent({ player }: { player: Player }) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Quick Recovery</CardTitle>
+                            <CardTitle className="text-base">{t('hospital.quickRecovery')}</CardTitle>
                             <CardDescription>
-                                Use health potions from your inventory to recover faster.
+                                {t('hospital.usePotion')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Button asChild variant="outline" className="gap-2">
                                 <Link href="/inventory">
                                     <BackpackIcon className="size-4" />
-                                    Go to Inventory
+                                    {t('hospital.toInventory')}
                                 </Link>
                             </Button>
                         </CardContent>
@@ -138,17 +139,17 @@ export default function HospitalContent({ player }: { player: Player }) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <CheckCircle2Icon className="size-5 text-green-500" />
-                                You&apos;re Healthy
+                                {t('hospital.healthy')}
                             </CardTitle>
                             <CardDescription>
-                                You are not hospitalized. Stay safe out there!
+                                {t('hospital.healthyDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <span className="flex items-center gap-2 text-sm">
                                     <HeartIcon className="size-4 text-green-500" />
-                                    Health
+                                    {t('health')}
                                 </span>
                                 <span className="font-semibold text-green-500">
                                     {player.health} / {player.maxHealth}
@@ -159,13 +160,13 @@ export default function HospitalContent({ player }: { player: Player }) {
                                 <Button asChild variant="default" className="gap-2">
                                     <Link href="/npc">
                                         <UsersIcon className="size-4" />
-                                        Go to NPC
+                                        {t('hospital.toNpc')}
                                     </Link>
                                 </Button>
                                 <Button asChild variant="outline" className="gap-2">
                                     <Link href="/inventory">
                                         <BackpackIcon className="size-4" />
-                                        Inventory
+                                        {t('nav.inventory')}
                                     </Link>
                                 </Button>
                             </div>

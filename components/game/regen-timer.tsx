@@ -17,6 +17,7 @@ import {
     HAPPY_REGEN_RATE,
     HAPPY_REGEN_INTERVAL_MS,
 } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type RegenStat = {
     key: string
@@ -51,10 +52,11 @@ function formatCountdown(ms: number): string {
 }
 
 export default function RegenTimer({ player }: { player: PlayerStats }) {
+    const { t } = useTranslation()
     const buildStats = useCallback((): RegenStat[] => [
         {
             key: 'health',
-            label: 'Health',
+            label: t('health'),
             current: player.health,
             max: player.maxHealth,
             rate: HEALTH_REGEN_RATE,
@@ -65,7 +67,7 @@ export default function RegenTimer({ player }: { player: PlayerStats }) {
         },
         {
             key: 'energy',
-            label: 'Energy',
+            label: t('energy'),
             current: player.energy,
             max: player.maxEnergy,
             rate: ENERGY_REGEN_RATE,
@@ -76,7 +78,7 @@ export default function RegenTimer({ player }: { player: PlayerStats }) {
         },
         {
             key: 'nerve',
-            label: 'Nerve',
+            label: t('nerve'),
             current: player.nerve,
             max: player.maxNerve,
             rate: NERVE_REGEN_RATE,
@@ -87,7 +89,7 @@ export default function RegenTimer({ player }: { player: PlayerStats }) {
         },
         {
             key: 'happy',
-            label: 'Happy',
+            label: t('happy'),
             current: player.happy,
             max: player.maxHappy,
             rate: HAPPY_REGEN_RATE,
@@ -96,7 +98,7 @@ export default function RegenTimer({ player }: { player: PlayerStats }) {
             color: 'bg-yellow-500',
             bgColor: 'text-yellow-500',
         },
-    ], [player])
+    ], [player, t])
 
     const [stats, setStats] = useState<RegenStat[]>(buildStats())
     const [countdowns, setCountdowns] = useState<Record<string, number>>({})

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { applyForJob, quitJob, work } from '@/app/actions/jobs'
 import { JOBS } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 import {
   BriefcaseIcon,
   BrainIcon,
@@ -30,6 +31,7 @@ type Player = {
 export default function JobsContent({ player }: { player: Player }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const { t } = useTranslation()
   const [result, setResult] = useState<{
     error?: string
     success?: boolean
@@ -74,7 +76,7 @@ export default function JobsContent({ player }: { player: Player }) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="flex items-center gap-1.5 font-medium">
-              <BrainIcon className="size-4" /> Nerve
+              <BrainIcon className="size-4" /> {t('nerve')}
             </span>
             <span className="text-muted-foreground">
               {player.nerve} / {player.maxNerve}
@@ -90,20 +92,20 @@ export default function JobsContent({ player }: { player: Player }) {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <BriefcaseIcon className="size-4" />
-              Current Job
+              {t('jobs.currentJob')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-lg">{currentJob.label}</p>
+                <p className="font-semibold text-lg">{t(`job.${currentJob.id}`)}</p>
                 <p className="text-sm text-muted-foreground">
-                  {currentJob.description}
+                  {t(`job.${currentJob.id}.desc`)}
                 </p>
                 <div className="flex flex-wrap gap-2 text-xs mt-1">
                   <Badge variant="secondary" className="flex items-center gap-1"><CoinsIcon className="h-3 w-3" /> ${currentJob.pay}</Badge>
                   <Badge variant="secondary" className="flex items-center gap-1"><StarIcon className="h-3 w-3" /> {currentJob.xp} XP</Badge>
-                  <Badge variant="outline" className="flex items-center gap-1"><BrainIcon className="h-3 w-3" /> {currentJob.nerveCost} nerve</Badge>
+                  <Badge variant="outline" className="flex items-center gap-1"><BrainIcon className="h-3 w-3" /> {currentJob.nerveCost} {t('nerve').toLowerCase()}</Badge>
                 </div>
               </div>
             </div>
@@ -112,10 +114,10 @@ export default function JobsContent({ player }: { player: Player }) {
                 onClick={handleWork}
                 disabled={isPending || player.nerve < currentJob.nerveCost}
               >
-                Work
+                {t('jobs.work')}
               </Button>
               <Button variant="outline" onClick={handleQuit} disabled={isPending}>
-                Quit Job
+                {t('jobs.quit')}
               </Button>
             </div>
           </CardContent>
@@ -136,11 +138,11 @@ export default function JobsContent({ player }: { player: Player }) {
               <span className="text-destructive">{result.error}</span>
             ) : (
               <span className="text-green-600 dark:text-green-400">
-                Earned ${result.moneyEarned} and {result.xpEarned} XP!
+                {t('jobs.earned', { money: String(result.moneyEarned), xp: String(result.xpEarned) })}
                 <br />
                 {result.leveledUp && (
                   <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 mt-1">
-                    <PartyPopperIcon className="h-4 w-4" /> Level up! You are now level {result.newLevel}!
+                    <PartyPopperIcon className="h-4 w-4" /> {t('jobs.levelUp', { level: String(result.newLevel) })}
                   </span>
                 )}
               </span>
@@ -154,7 +156,7 @@ export default function JobsContent({ player }: { player: Player }) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <BriefcaseIcon className="size-4" />
-            Available Jobs
+            Pekerjaan Tersedia
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -169,13 +171,13 @@ export default function JobsContent({ player }: { player: Player }) {
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{job.label}</p>
+                    <p className="font-medium">{t(`job.${job.id}`)}</p>
                     {isCurrent && (
                       <CheckCircleIcon className="size-4 text-primary" />
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {job.description}
+                    {t(`job.${job.id}.desc`)}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Badge variant="secondary" className="flex items-center gap-1">
@@ -185,7 +187,7 @@ export default function JobsContent({ player }: { player: Player }) {
                       <StarIcon className="h-3 w-3" /> {job.xp} XP
                     </Badge>
                     <Badge variant="outline" className="flex items-center gap-1">
-                      <BrainIcon className="h-3 w-3" /> {job.nerveCost} nerve
+                      <BrainIcon className="h-3 w-3" /> {job.nerveCost} {t('nerve').toLowerCase()}
                     </Badge>
                     {locked && (
                       <Badge variant="destructive" className="text-xs">
@@ -202,7 +204,7 @@ export default function JobsContent({ player }: { player: Player }) {
                     disabled={isPending}
                     onClick={() => handleApply(job.id)}
                   >
-                    Apply <ArrowRightIcon className="ml-1 size-3" />
+                    {t('jobs.apply')} <ArrowRightIcon className="ml-1 size-3" />
                   </Button>
                 )}
               </div>

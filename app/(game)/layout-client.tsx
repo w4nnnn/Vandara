@@ -6,6 +6,8 @@ import { useEffect, useState, useCallback, useTransition } from 'react'
 import { dismissEncounterMessage } from '@/app/actions/character'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { useTranslation } from '@/lib/i18n'
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -25,6 +27,8 @@ import {
   HospitalIcon,
   SearchIcon,
   StoreIcon,
+  ArrowRightLeftIcon,
+  LanguagesIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -40,13 +44,6 @@ import {
   HAPPY_REGEN_INTERVAL_MS,
   type LocationId,
 } from '@/lib/game/constants'
-
-const ACTIVITY_LABEL_MAP: Record<string, string> = {
-  gym: 'Training',
-  combat: 'Fighting',
-  jobs: 'Working',
-  hospital: 'Recovering'
-}
 
 const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
   city_center: BuildingIcon,
@@ -78,17 +75,17 @@ type Player = {
   avatar?: Record<string, any> | null
 }
 
-const NAV_ITEMS = [
-  { label: 'Home', href: '/dashboard', icon: LayoutDashboardIcon, activity: null },
-  { label: 'Travel', href: '/travel', icon: PlaneIcon, activity: null },
-  { label: 'Scavenge', href: '/scavenge', icon: SearchIcon, activity: null },
-  { label: 'Shop', href: '/shop', icon: StoreIcon, activity: null },
-  { label: 'Estate', href: '/properties', icon: BuildingIcon, activity: null },
-  { label: 'NPC', href: '/npc', icon: UsersIcon, activity: 'combat' as const },
-  { label: 'Gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
-  { label: 'Jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
-  { label: 'Hospital', href: '/hospital', icon: HeartPulseIcon, activity: 'hospital' as const },
-  { label: 'Items', href: '/inventory', icon: BackpackIcon, activity: null },
+const NAV_KEYS = [
+  { key: 'nav.home', href: '/dashboard', icon: LayoutDashboardIcon, activity: null },
+  { key: 'nav.travel', href: '/travel', icon: PlaneIcon, activity: null },
+  { key: 'nav.scavenge', href: '/scavenge', icon: SearchIcon, activity: null },
+  { key: 'nav.shop', href: '/shop', icon: StoreIcon, activity: null },
+  { key: 'nav.properties', href: '/properties', icon: BuildingIcon, activity: null },
+  { key: 'nav.npc', href: '/npc', icon: UsersIcon, activity: 'combat' as const },
+  { key: 'nav.gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
+  { key: 'nav.jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
+  { key: 'nav.hospital', href: '/hospital', icon: HeartPulseIcon, activity: 'hospital' as const },
+  { key: 'nav.inventory', href: '/inventory', icon: BackpackIcon, activity: null },
 ]
 
 // ─── Compact HUD Stat Bar ────────────────────────────────────────
@@ -108,7 +105,7 @@ function HudStat({
 }) {
   const pct = Math.max(0, Math.min(100, Math.round((current / max) * 100)))
   return (
-    <div className="flex items-center gap-1.5 min-w-0" title={`${label}: ${current}/${max}`}>
+    <div className="flex items-center gap-1.5 min-w-0" title={`${label}: ${current}/${max}`} aria-label={`${label}: ${current}/${max}`}>
       <Icon className={`size-3.5 shrink-0 ${color}`} />
       <div className="relative h-2 w-12 sm:w-16 overflow-hidden rounded-full bg-white/10">
         <div
@@ -136,6 +133,7 @@ export default function GameLayoutClient({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [hideEncounter, setHideEncounter] = useState(false)
+  const { t, locale, setLocale, dir, toggleDir } = useTranslation()
 
   // Client-side regen simulation for HUD
   const computeStats = useCallback(() => {
@@ -202,34 +200,52 @@ export default function GameLayoutClient({
             ) : (
               <span className="flex items-center gap-1.5">
                 {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-3.5 text-muted-foreground" /> })()}
-                {currentLoc?.label ?? 'Unknown'}
+                {t(`loc.${currentLoc?.id}`) || t('unknown')}
               </span>
             )}
           </Link>
 
           {/* Center: Stat Bars */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <HudStat icon={HeartIcon} current={stats.health} max={player.maxHealth} color="text-red-500" label="Health" />
-            <HudStat icon={BoltIcon} current={stats.energy} max={player.maxEnergy} color="text-green-500" label="Energy" />
-            <HudStat icon={BrainIcon} current={stats.nerve} max={player.maxNerve} color="text-blue-500" label="Nerve" />
-            <HudStat icon={SmileIcon} current={stats.happy} max={player.maxHappy} color="text-yellow-500" label="Happy" />
+            <HudStat icon={HeartIcon} current={stats.health} max={player.maxHealth} color="text-red-500" label={t('health')} />
+            <HudStat icon={BoltIcon} current={stats.energy} max={player.maxEnergy} color="text-green-500" label={t('energy')} />
+            <HudStat icon={BrainIcon} current={stats.nerve} max={player.maxNerve} color="text-blue-500" label={t('nerve')} />
+            <HudStat icon={SmileIcon} current={stats.happy} max={player.maxHappy} color="text-yellow-500" label={t('happy')} />
           </div>
 
-          {/* Right: Money */}
-          <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 shrink-0">
-            <CoinsIcon className="size-3.5" />
-            <span className="tabular-nums">
-              ${Number(player.money) >= 1000
-                ? `${(Number(player.money) / 1000).toFixed(1)}K`
-                : Number(player.money).toLocaleString()}
-            </span>
+          {/* Right: Money + Language + RTL toggle */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 shrink-0">
+              <CoinsIcon className="size-3.5" />
+              <span className="tabular-nums">
+                ${Number(player.money) >= 1000
+                  ? `${(Number(player.money) / 1000).toFixed(1)}K`
+                  : Number(player.money).toLocaleString()}
+              </span>
+            </div>
+            <button
+              aria-label={t('hud.language')}
+              onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+              className="p-1 rounded hover:bg-white/10 text-[10px] font-bold uppercase"
+              title={t('hud.language')}
+            >
+              {locale === 'id' ? 'EN' : 'ID'}
+            </button>
+            <button
+              aria-label="Toggle RTL/LTR"
+              onClick={toggleDir}
+              className="p-1 rounded hover:bg-white/10"
+              title={`${dir.toUpperCase()}`}
+            >
+              <ArrowRightLeftIcon className="size-3.5" />
+            </button>
           </div>
         </div>
 
         {/* Hospitalized banner */}
         {player.isHospitalized && (
           <div className="flex items-center justify-center gap-1.5 bg-red-900/80 text-center text-xs text-red-200 py-1 font-medium">
-            <HospitalIcon className="size-3.5" /> Hospitalized — All activities blocked
+            <HospitalIcon className="size-3.5" /> {t('hud.hospitalized')}
           </div>
         )}
       </header>
@@ -240,11 +256,11 @@ export default function GameLayoutClient({
         {player.lastEncounterMsg && !hideEncounter && (
           <Alert className="border-primary/50 bg-primary/10">
             <AlertTriangleIcon className="size-4" />
-            <AlertTitle>Random Encounter</AlertTitle>
+            <AlertTitle>{t('hud.encounter')}</AlertTitle>
             <AlertDescription className="mt-2 flex flex-col gap-3">
               <p>{player.lastEncounterMsg}</p>
               <Button size="sm" onClick={handleDismissEncounter} disabled={isPending} className="w-fit">
-                {isPending ? 'Dismissing...' : 'Continue'}
+                {isPending ? t('hud.dismissing') : t('hud.continue')}
               </Button>
             </AlertDescription>
           </Alert>
@@ -256,17 +272,33 @@ export default function GameLayoutClient({
       {/* ═══ BOTTOM NAV BAR ═══ */}
       <nav className="fixed bottom-0 inset-x-0 z-50 border-t bg-zinc-900/95 backdrop-blur-sm text-white safe-area-pb">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-1 py-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_KEYS.map((item) => {
+            const label = t(item.key)
             const isActive = pathname === item.href
             const requiredLoc = item.activity ? ACTIVITY_LOCATIONS[item.activity] : null
             const isLocked = requiredLoc
               ? player.currentLocation !== requiredLoc || !!player.travelingTo
               : !!player.travelingTo && item.activity !== null
 
+            const handleNavClick = (e: React.MouseEvent) => {
+              if (isLocked && item.activity) {
+                e.preventDefault()
+                const locLabel = t(`activityLoc.${item.activity}`)
+                toast.warning(t('toast.notAvailable', { item: label }), {
+                  description: t('toast.mustTravel', { loc: locLabel, item: label }),
+                  action: {
+                    label: t('toast.go'),
+                    onClick: () => router.push('/travel'),
+                  },
+                })
+              }
+            }
+
             return (
               <Link
                 key={item.href}
-                href={isLocked ? '/travel' : item.href}
+                href={isLocked ? '#' : item.href}
+                onClick={handleNavClick}
                 className={`flex flex-1 flex-col items-center justify-center gap-1 h-14 rounded-xl text-[10px] sm:text-xs transition-colors ${isActive
                   ? 'text-white bg-white/15'
                   : isLocked
@@ -275,7 +307,7 @@ export default function GameLayoutClient({
                   }`}
               >
                 <item.icon className="size-5" />
-                <span className="truncate w-full text-center px-0.5">{item.label}</span>
+                <span className="truncate w-full text-center px-0.5">{label}</span>
               </Link>
             )
           })}

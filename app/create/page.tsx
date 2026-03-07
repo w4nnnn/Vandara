@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createCharacter } from '@/app/actions/character'
 import { AVATAR_OPTIONS, type AvatarOptionKey } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 function formatLabel(value: string): string {
   return value
@@ -44,36 +45,23 @@ const DEFAULTS: AvatarState = {
   skinColor: 'Light',
 }
 
-const OPTION_LABELS: Record<AvatarOptionKey, string> = {
-  topType: 'Hairstyle',
-  accessoriesType: 'Accessories',
-  hatColor: 'Hat Color',
-  hairColor: 'Hair Color',
-  facialHairType: 'Facial Hair',
-  facialHairColor: 'Facial Hair Color',
-  clotheType: 'Clothing',
-  clotheColor: 'Clothing Color',
-  graphicType: 'Shirt Graphic',
-  eyeType: 'Eyes',
-  eyebrowType: 'Eyebrows',
-  mouthType: 'Mouth',
-  skinColor: 'Skin Color',
-}
 
 function AvatarSelect({
   optionKey,
   value,
   onChange,
+  t,
 }: {
   optionKey: AvatarOptionKey
   value: string
   onChange: (key: AvatarOptionKey, value: string) => void
+  t: (key: string) => string
 }) {
   const options = AVATAR_OPTIONS[optionKey]
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">
-        {OPTION_LABELS[optionKey]}
+        {t(`create.${optionKey}`)}
       </Label>
       <Select value={value} onValueChange={(v) => onChange(optionKey, v)}>
         <SelectTrigger className="w-full">
@@ -97,6 +85,7 @@ export default function CreateCharacterPage() {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { t } = useTranslation()
 
   function handleAvatarChange(key: AvatarOptionKey, value: string) {
     setAvatar((prev) => ({ ...prev, [key]: value }))
@@ -134,7 +123,7 @@ export default function CreateCharacterPage() {
         <div className="flex flex-col items-center gap-4">
           <Card className="w-full">
             <CardHeader className="pb-2 text-center">
-              <CardTitle className="text-lg">Preview</CardTitle>
+              <CardTitle className="text-lg">{t('create.preview')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4 pb-6">
               <div className="rounded-full bg-muted p-2">
@@ -157,10 +146,10 @@ export default function CreateCharacterPage() {
                 />
               </div>
               <p className="text-lg font-semibold">
-                {name || 'Your Character'}
+                {name || t('create.yourCharacter')}
               </p>
               <Button variant="outline" size="sm" onClick={randomize}>
-                <DicesIcon className="mr-2 h-4 w-4" /> Randomize
+                <DicesIcon className="mr-2 h-4 w-4" /> {t('create.random')}
               </Button>
             </CardContent>
           </Card>
@@ -169,14 +158,14 @@ export default function CreateCharacterPage() {
         {/* Customization Panel */}
         <Card>
           <CardHeader>
-            <CardTitle>Create Your Character</CardTitle>
+            <CardTitle>{t('create.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Character Name</Label>
+              <Label htmlFor="name">{t('create.name')}</Label>
               <Input
                 id="name"
-                placeholder="Enter your name..."
+                placeholder={t('create.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={50}
@@ -190,13 +179,13 @@ export default function CreateCharacterPage() {
             <Tabs defaultValue="head">
               <TabsList className="w-full">
                 <TabsTrigger value="head" className="flex-1">
-                  Head
+                  {t('create.head')}
                 </TabsTrigger>
                 <TabsTrigger value="face" className="flex-1">
-                  Face
+                  {t('create.face')}
                 </TabsTrigger>
                 <TabsTrigger value="body" className="flex-1">
-                  Body
+                  {t('create.body')}
                 </TabsTrigger>
               </TabsList>
 
@@ -205,31 +194,37 @@ export default function CreateCharacterPage() {
                   optionKey="topType"
                   value={avatar.topType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="hairColor"
                   value={avatar.hairColor}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="hatColor"
                   value={avatar.hatColor}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="accessoriesType"
                   value={avatar.accessoriesType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="facialHairType"
                   value={avatar.facialHairType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="facialHairColor"
                   value={avatar.facialHairColor}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
               </TabsContent>
 
@@ -238,21 +233,25 @@ export default function CreateCharacterPage() {
                   optionKey="eyeType"
                   value={avatar.eyeType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="eyebrowType"
                   value={avatar.eyebrowType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="mouthType"
                   value={avatar.mouthType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="skinColor"
                   value={avatar.skinColor}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
               </TabsContent>
 
@@ -261,16 +260,19 @@ export default function CreateCharacterPage() {
                   optionKey="clotheType"
                   value={avatar.clotheType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="clotheColor"
                   value={avatar.clotheColor}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
                 <AvatarSelect
                   optionKey="graphicType"
                   value={avatar.graphicType}
                   onChange={handleAvatarChange}
+                  t={t}
                 />
               </TabsContent>
             </Tabs>
@@ -281,7 +283,7 @@ export default function CreateCharacterPage() {
               onClick={handleSubmit}
               disabled={isPending || !name.trim()}
             >
-              {isPending ? 'Creating...' : <><SwordsIcon className="mr-2 h-4 w-4" /> Enter the City</>}
+              {isPending ? t('create.creating') : <><SwordsIcon className="mr-2 h-4 w-4" /> {t('create.enter')}</>}
             </Button>
           </CardContent>
         </Card>

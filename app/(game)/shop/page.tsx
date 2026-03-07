@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import ShopContent from './shop-content'
 
 export const metadata = {
-    title: 'Shop | RPG Game',
+    title: 'Toko | RPG Game',
 }
 
 export default async function ShopPage() {

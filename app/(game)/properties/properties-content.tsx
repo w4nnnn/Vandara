@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { BuildingIcon, CoinsIcon, HomeIcon, BriefcaseIcon, SkullIcon, ClockIcon, LandmarkIcon } from 'lucide-react'
 import { buyProperty, collectIncome } from '@/app/actions/properties'
 import { PROPERTIES, type LocationId } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type Player = {
     id: number
@@ -30,6 +31,7 @@ const PROP_ICONS: Record<string, React.ElementType> = {
 export default function PropertiesContent({ player, ownedProperties }: { player: Player, ownedProperties: OwnedProperty[] }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const { t } = useTranslation()
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
     const [now, setNow] = useState(Date.now())
 
@@ -42,7 +44,7 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
         startTransition(async () => {
             const res = await buyProperty(propId)
             if (res.error) setMessage({ text: res.error, type: 'error' })
-            else setMessage({ text: `Successfully purchased ${res.bought}!`, type: 'success' })
+            else setMessage({ text: t('properties.bought', { prop: res.bought ?? '' }), type: 'success' })
             router.refresh()
         })
     }
@@ -51,7 +53,7 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
         startTransition(async () => {
             const res = await collectIncome(playerPropId)
             if (res.error) setMessage({ text: res.error, type: 'error' })
-            else setMessage({ text: `Collected $${res.income} from ${res.label}!`, type: 'success' })
+            else setMessage({ text: t('properties.collected', { amount: String(res.income ?? 0), prop: res.label ?? '' }), type: 'success' })
             router.refresh()
         })
     }
@@ -62,12 +64,12 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <LandmarkIcon className="size-6 text-primary" />
-                        Real Estate Market
+                        {t('properties.market')}
                     </h1>
-                    <p className="text-sm text-muted-foreground">Invest in businesses to earn passive income over time.</p>
+                    <p className="text-sm text-muted-foreground">{t('properties.marketDesc')}</p>
                 </div>
                 <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-right">
-                    <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Your Balance</div>
+                    <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{t('shop.yourBalance')}</div>
                     <div className="flex items-center justify-end gap-1.5 text-xl font-black text-emerald-600 dark:text-emerald-400">
                         <CoinsIcon className="size-5" />
                         ${player.money.toLocaleString()}
@@ -84,7 +86,7 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
             <div className="grid gap-6">
                 {/* Available for Purchase */}
                 <section className="space-y-4">
-                    <h2 className="text-lg font-semibold px-1">Available Properties</h2>
+                    <h2 className="text-lg font-semibold px-1">{t('properties.available')}</h2>
                     <div className="grid gap-4 md:grid-cols-2">
                         {Object.values(PROPERTIES).map((prop) => {
                             const isOwned = ownedProperties.some(p => p.propertyId === prop.id)
@@ -99,20 +101,20 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
                                             <div className="space-y-1">
                                                 <CardTitle className="text-lg flex items-center gap-2">
                                                     <Icon className="size-4 text-primary" />
-                                                    {prop.label}
+                                                    {t(`prop.${prop.id}`)}
                                                 </CardTitle>
-                                                <CardDescription>{prop.description}</CardDescription>
+                                                <CardDescription>{t(`prop.${prop.id}.desc`)}</CardDescription>
                                             </div>
-                                            {isOwned && <Badge variant="secondary">Owned</Badge>}
+                                            {isOwned && <Badge variant="secondary">{t('properties.owned')}</Badge>}
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-2">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Income</span>
-                                            <span className="font-bold text-emerald-500">+${prop.incomePerHour}/hour</span>
+                                            <span className="text-muted-foreground">{t('properties.income')}</span>
+                                            <span className="font-bold text-emerald-500">+${prop.incomePerHour}{t('properties.perHour')}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Location</span>
+                                            <span className="text-muted-foreground">{t('properties.location')}</span>
                                             <span className="capitalize">{prop.locationId.replace('_', ' ')}</span>
                                         </div>
                                     </CardContent>
@@ -124,7 +126,7 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
                                                 disabled={isPending || isOwned || !canAfford || isWrongLocation}
                                                 onClick={() => handleBuy(prop.id)}
                                             >
-                                                {isWrongLocation ? `Travel to ${prop.locationId}` : `Buy for $${prop.cost.toLocaleString()}`}
+                                                {isWrongLocation ? t('properties.goTo', { location: prop.locationId.replace('_', ' ') }) : `${t('shop.buy')} $${prop.cost.toLocaleString()}`}
                                             </Button>
                                         </CardFooter>
                                     )}
@@ -136,11 +138,11 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
 
                 {/* Dashboard of Earnings */}
                 <section className="space-y-4">
-                    <h2 className="text-lg font-semibold px-1">Income Dashboard</h2>
+                    <h2 className="text-lg font-semibold px-1">{t('properties.incomeDashboard')}</h2>
                     {ownedProperties.length === 0 ? (
                         <div className="text-center py-12 border rounded-xl bg-muted/20">
                             <LandmarkIcon className="size-12 text-muted-foreground/30 mx-auto mb-4" />
-                            <p className="text-muted-foreground">You don't own any properties yet.</p>
+                            <p className="text-muted-foreground">{t('properties.noProperties')}</p>
                         </div>
                     ) : (
                         <div className="grid gap-4">
@@ -162,20 +164,20 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
                                                         <Icon className="size-5" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-bold">{propDef.label}</h3>
+                                                        <h3 className="font-bold">{t(`prop.${propDef.id}`)}</h3>
                                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                                                             <ClockIcon className="size-3" />
-                                                            Last claimed: {new Date(owned.lastCollectedAt).toLocaleTimeString()}
+                                                            {t('properties.lastCollected')}: {new Date(owned.lastCollectedAt).toLocaleTimeString()}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="bg-muted/50 p-2 rounded-lg text-center">
-                                                        <div className="text-[10px] text-muted-foreground uppercase">Rate</div>
-                                                        <div className="text-sm font-bold">${propDef.incomePerHour}/hr</div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase">{t('properties.rate')}</div>
+                                                        <div className="text-sm font-bold">${propDef.incomePerHour}{t('properties.perHour')}</div>
                                                     </div>
                                                     <div className="bg-emerald-500/10 p-2 rounded-lg text-center">
-                                                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase">Pending</div>
+                                                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase">{t('properties.pending')}</div>
                                                         <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${pendingIncome}</div>
                                                     </div>
                                                 </div>
@@ -186,7 +188,7 @@ export default function PropertiesContent({ player, ownedProperties }: { player:
                                                     disabled={isPending || !canCollect}
                                                     className="w-full sm:w-auto min-w-[120px]"
                                                 >
-                                                    Claim Money
+                                                    {t('properties.collect')}
                                                 </Button>
                                             </div>
                                         </div>

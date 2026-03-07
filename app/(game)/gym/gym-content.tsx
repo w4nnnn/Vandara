@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { trainGym } from '@/app/actions/gym'
 import { GYM_EXERCISES, type GymStat } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 import {
   SwordIcon,
   ShieldIcon,
@@ -47,6 +48,7 @@ const STAT_LABELS: GymStat[] = ['strength', 'defense', 'speed', 'dexterity']
 export default function GymContent({ player }: { player: Player }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const { t } = useTranslation()
   const [result, setResult] = useState<{
     stat?: string
     gained?: number
@@ -72,7 +74,7 @@ export default function GymContent({ player }: { player: Player }) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="flex items-center gap-1.5 font-medium">
-              <BoltIcon className="size-4" /> Energy
+              <BoltIcon className="size-4" /> {t('energy')}
             </span>
             <span className="text-muted-foreground">
               {player.energy} / {player.maxEnergy}
@@ -100,8 +102,8 @@ export default function GymContent({ player }: { player: Player }) {
                   <Icon className={`size-4 ${STAT_COLOR[stat]}`} />
                 </div>
                 <div>
-                  <p className="text-xs capitalize text-muted-foreground">
-                    {stat}
+                  <p className="text-xs text-muted-foreground">
+                    {t(stat)}
                   </p>
                   <p className="text-lg font-bold">
                     {player[stat].toLocaleString()}
@@ -139,7 +141,7 @@ export default function GymContent({ player }: { player: Player }) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base capitalize">
             <DumbbellIcon className="size-4" />
-            {selectedStat} Training
+            {t('gym.training')} {t(selectedStat)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -149,16 +151,16 @@ export default function GymContent({ player }: { player: Player }) {
               className="flex items-center justify-between rounded-lg border p-3"
             >
               <div className="space-y-0.5">
-                <p className="font-medium">{ex.label}</p>
+                <p className="font-medium">{t(`exercise.${ex.id}`)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {ex.description}
+                  {t(`exercise.${ex.id}.desc`)}
                 </p>
                 <div className="flex gap-2 pt-1">
                   <Badge variant="secondary" className="text-xs">
                     +{ex.baseGain} {ex.stat}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    <span className="flex items-center gap-1"><ZapIcon className="h-3 w-3 text-orange-400" /> {ex.energyCost} energy</span>
+                    <span className="flex items-center gap-1"><ZapIcon className="h-3 w-3 text-orange-400" /> {ex.energyCost} {t('gym.energyCost')}</span>
                   </Badge>
                 </div>
               </div>
@@ -167,7 +169,7 @@ export default function GymContent({ player }: { player: Player }) {
                 disabled={isPending || player.energy < ex.energyCost}
                 onClick={() => handleTrain(ex.id)}
               >
-                Train
+                {t('gym.train')}
               </Button>
             </div>
           ))}

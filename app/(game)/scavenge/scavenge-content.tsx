@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { SearchIcon, MapPinIcon, ZapIcon, InfoIcon, ArchiveIcon } from 'lucide-react'
 import { scavenge } from '@/app/actions/scavenge'
 import { LOCATIONS, type LocationId } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 // Copy of Player type for props
 type Player = {
@@ -23,6 +24,7 @@ type Player = {
 export default function ScavengeContent({ player }: { player: Player }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const { t } = useTranslation()
     const [result, setResult] = useState<{
         success?: boolean
         loot?: { label: string; money?: number; itemId?: string; quantity?: number }
@@ -46,10 +48,10 @@ export default function ScavengeContent({ player }: { player: Player }) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <MapPinIcon className="size-5 text-primary" />
-                        Scavenging in {currentLoc?.label || 'Unknown Area'}
+                        {t('scavenge.title', { location: currentLoc ? t(`loc.${player.currentLocation}`) : t('unknown') })}
                     </CardTitle>
                     <CardDescription>
-                        Spend energy to search the current area for loose cash, dropped items, or discarded materials.
+                        {t('scavenge.desc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -57,9 +59,9 @@ export default function ScavengeContent({ player }: { player: Player }) {
                         <div className="flex items-start gap-3">
                             <InfoIcon className="size-5 text-muted-foreground mt-0.5 shrink-0" />
                             <div className="text-sm">
-                                <p className="font-semibold text-foreground mb-1">Area Details:</p>
+                                <p className="font-semibold text-foreground mb-1">{t('scavenge.areaDetail')}</p>
                                 <p className="text-muted-foreground">
-                                    Different areas yield different types of loot. Urban centers might have dropped money or luxury items, while back alleys might yield weapons or scrap.
+                                    {t('scavenge.areaInfo')}
                                 </p>
                             </div>
                         </div>
@@ -70,13 +72,13 @@ export default function ScavengeContent({ player }: { player: Player }) {
                         <Alert variant={result.error ? 'destructive' : 'default'} className={result.success ? "border-green-500/50 bg-green-500/10" : ""}>
                             <AlertTitle className="flex items-center gap-2">
                                 {result.error ? <InfoIcon className="size-4" /> : <ArchiveIcon className="size-4 text-green-500" />}
-                                {result.error ? 'Scavenge Failed' : 'Loot Found!'}
+                                {result.error ? t('scavenge.failed') : t('scavenge.lootFound')}
                             </AlertTitle>
                             <AlertDescription>
                                 {result.error && result.error}
                                 {result.success && result.loot && (
                                     <span className="text-green-600 dark:text-green-400 font-medium">
-                                        You found {result.loot.quantity && result.loot.quantity > 1 ? `${result.loot.quantity}x ` : ''}
+                                        {t('scavenge.found')} {result.loot.quantity && result.loot.quantity > 1 ? `${result.loot.quantity}x ` : ''}
                                         {result.loot.money ? `$${result.loot.money} (${result.loot.label})` : result.loot.label}!
                                     </span>
                                 )}
@@ -86,14 +88,14 @@ export default function ScavengeContent({ player }: { player: Player }) {
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-lg border p-4">
                         <div>
-                            <p className="font-semibold">Search Area</p>
+                            <p className="font-semibold">{t('scavenge.searchArea')}</p>
                             <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="outline" className="text-xs">
                                     <ZapIcon className="size-3 text-orange-400 mr-1" />
-                                    Cost: 5 Energy
+                                    {t('scavenge.energyCost')}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">
-                                    (You have {player.energy} Energy)
+                                    {t('scavenge.youHave', { energy: String(player.energy) })}
                                 </span>
                             </div>
                         </div>
@@ -104,7 +106,7 @@ export default function ScavengeContent({ player }: { player: Player }) {
                             className="w-full sm:w-auto"
                         >
                             <SearchIcon className="mr-2 size-4" />
-                            {isPending ? 'Searching...' : 'Search Now'}
+                            {isPending ? t('scavenge.searching') : t('scavenge.searchNow')}
                         </Button>
                     </div>
                 </CardContent>

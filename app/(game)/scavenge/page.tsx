@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import ScavengeContent from './scavenge-content'
 
 export const metadata = {
-    title: 'Scavenge | RPG Game',
+    title: 'Memulung | RPG Game',
 }
 
 export default async function ScavengePage() {

@@ -1,6 +1,7 @@
 import { useState, useTransition, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { initiateCombat, finishCombat } from '@/app/actions/combat'
+import { useTranslation } from '@/lib/i18n'
 
 export type CombatantStats = {
     health: number
@@ -60,6 +61,7 @@ export function useCombat(
 ) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const { t } = useTranslation()
 
     const [enemyId, setEnemyId] = useState<string | null>(null)
     const [enemyLabel, setEnemyLabel] = useState('')
@@ -78,7 +80,7 @@ export function useCombat(
         startTransition(async () => {
             const res = await initiateCombat(eId)
             if ('error' in res) {
-                onError(res.error ?? 'Terjadi kesalahan')
+                onError(res.error ?? t('combat.error'))
                 return
             }
             setEnemyId(eId)
@@ -95,7 +97,7 @@ export function useCombat(
             setResult(null)
             onPhaseChange('in_combat')
         })
-    }, [onError, onPhaseChange])
+    }, [onError, onPhaseChange, t])
 
     const processTurn = useCallback((action: TurnAction) => {
         if (!playerStats || !enemyStats || !enemyId) return
@@ -112,27 +114,27 @@ export function useCombat(
                 (playerStats.speed + playerStats.dexterity + enemyStats.speed + enemyStats.dexterity) + 0.1
             if (Math.random() < fleeChance) {
                 fled = true
-                message = 'Kamu berhasil kabur dari pertarungan!'
+                message = t('combat.fleeSuccess')
             } else {
                 enemyDmg = calcDamage(enemyStats, playerStats)
                 newPlayerHP -= enemyDmg
-                message = `Kamu gagal kabur! Musuh menyerangmu dan memberikan ${enemyDmg} damage.`
+                message = t('combat.fleeFail', { dmg: String(enemyDmg) })
             }
         } else {
             if (action === 'attack') {
                 playerDmg = calcDamage(playerStats, enemyStats, 1.0)
                 message = playerDmg > 0
-                    ? `Kamu menyerang dan memberikan ${playerDmg} damage.`
-                    : 'Seranganmu meleset!'
+                    ? t('combat.attackHit', { dmg: String(playerDmg) })
+                    : t('combat.attackMiss')
             } else if (action === 'heavy_attack') {
                 const boosted = { ...playerStats, strength: Math.ceil(playerStats.strength * 1.8), speed: Math.ceil(playerStats.speed * 0.5) }
                 playerDmg = calcDamage(boosted, enemyStats, 1.0)
                 message = playerDmg > 0
-                    ? `Serangan keras! ${playerDmg} damage!`
-                    : 'Serangan kerasmu meleset!'
+                    ? t('combat.heavyHit', { dmg: String(playerDmg) })
+                    : t('combat.heavyMiss')
             } else if (action === 'defend') {
                 setIsDefending(true)
-                message = 'Kamu bertahan untuk menahan serangan berikutnya.'
+                message = t('combat.defending')
             }
 
             newEnemyHP -= playerDmg
@@ -147,10 +149,12 @@ export function useCombat(
                 enemyDmg = calcDamage(enemyStats, defendingPlayer)
                 newPlayerHP -= enemyDmg
                 message += enemyDmg > 0
-                    ? ` Musuh membalas dan memberikan ${enemyDmg} damage${action === 'defend' ? ' (berkurang karena bertahan)' : ''}.`
-                    : ' Serangan musuh meleset!'
+                    ? action === 'defend'
+                        ? t('combat.enemyHitDefend', { dmg: String(enemyDmg) })
+                        : t('combat.enemyHit', { dmg: String(enemyDmg) })
+                    : t('combat.enemyMiss')
             } else {
-                message += ' Musuh berhasil dikalahkan!'
+                message += t('combat.enemyDefeated')
             }
 
             if (action !== 'defend') {
@@ -200,7 +204,7 @@ export function useCombat(
             startTransition(async () => {
                 const res = await finishCombat(enemyId, won, totalDealt, totalTaken, Math.max(0, newPlayerHP))
                 if ('error' in res) {
-                    onError(res.error ?? 'Terjadi kesalahan')
+                    onError(res.error ?? t('combat.error'))
                     return
                 }
                 setResult({
@@ -217,7 +221,7 @@ export function useCombat(
                 router.refresh()
             })
         }
-    }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, playerLevel, router, onError, onPhaseChange])
+    }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, playerLevel, router, onError, onPhaseChange, t])
 
     const resetCombat = useCallback(() => {
         setResult(null)

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LOCATIONS, type LocationId } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type Player = {
   id: number
@@ -89,6 +90,7 @@ function BattleStat({
 }
 
 export default function DashboardContent({ player }: { player: Player }) {
+  const { t } = useTranslation()
   const xpNeeded = xpForLevel(player.level + 1)
   const xpPct = Math.min(
     Math.round((player.experience / xpNeeded) * 100),
@@ -101,11 +103,11 @@ export default function DashboardContent({ player }: { player: Player }) {
       {player.isHospitalized && (
         <Alert variant="destructive">
           <HeartPulseIcon className="size-4" />
-          <AlertTitle>Hospitalized</AlertTitle>
+          <AlertTitle>{t('dashboard.hospitalized')}</AlertTitle>
           <AlertDescription>
-            You are in the hospital. All activities are blocked until you are discharged.
+            {t('dashboard.hospitalizedDesc')}
             <Link href="/hospital" className="ml-1 underline font-medium">
-              View Hospital →
+              {t('dashboard.viewHospital')}
             </Link>
           </AlertDescription>
         </Alert>
@@ -142,7 +144,7 @@ export default function DashboardContent({ player }: { player: Player }) {
             </p>
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPinIcon className="size-3" />
-              {LOCATIONS[player.currentLocation as LocationId]?.label ?? player.currentLocation}
+              {t(`loc.${player.currentLocation}`) || player.currentLocation}
             </p>
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -156,7 +158,7 @@ export default function DashboardContent({ player }: { player: Player }) {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Balance</p>
+            <p className="text-xs text-muted-foreground">{t('balance')}</p>
             <p className="text-2xl font-bold text-primary">
               ${Number(player.money).toLocaleString()}
             </p>
@@ -167,7 +169,7 @@ export default function DashboardContent({ player }: { player: Player }) {
       {/* Status Bars — Real-time Regen */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Status</CardTitle>
+          <CardTitle className="text-base">{t('status')}</CardTitle>
         </CardHeader>
         <CardContent>
           <RegenTimer player={player} />
@@ -177,27 +179,27 @@ export default function DashboardContent({ player }: { player: Player }) {
       {/* Battle Stats */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Battle Stats</CardTitle>
+          <CardTitle className="text-base">{t('dashboard.battleStats')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
             <BattleStat
-              label="Strength"
+              label={t('strength')}
               value={player.strength}
               icon={SwordIcon}
             />
             <BattleStat
-              label="Defense"
+              label={t('defense')}
               value={player.defense}
               icon={ShieldIcon}
             />
             <BattleStat
-              label="Speed"
+              label={t('speed')}
               value={player.speed}
               icon={ZapIcon}
             />
             <BattleStat
-              label="Dexterity"
+              label={t('dexterity')}
               value={player.dexterity}
               icon={TargetIcon}
             />

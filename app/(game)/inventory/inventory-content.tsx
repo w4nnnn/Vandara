@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useItem, sellItem } from '@/app/actions/inventory'
 import { ITEMS, type ItemCategory } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 import {
   BackpackIcon,
   PackageIcon,
@@ -40,6 +41,7 @@ export default function InventoryContent({
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const { t } = useTranslation()
   const [message, setMessage] = useState<{
     text: string
     type: 'success' | 'error'
@@ -49,7 +51,7 @@ export default function InventoryContent({
     startTransition(async () => {
       const res = await useItem(itemId)
       if (res.error) setMessage({ text: res.error, type: 'error' })
-      else setMessage({ text: `Used ${res.used}!`, type: 'success' })
+      else setMessage({ text: t('inventory.used', { item: res.used ?? '' }), type: 'success' })
       router.refresh()
     })
   }
@@ -60,7 +62,7 @@ export default function InventoryContent({
       if (res.error) setMessage({ text: res.error, type: 'error' })
       else
         setMessage({
-          text: `Sold for $${res.moneyEarned}`,
+          text: t('inventory.sold', { price: String(res.moneyEarned) }),
           type: 'success',
         })
       router.refresh()
@@ -72,7 +74,7 @@ export default function InventoryContent({
       {/* Balance */}
       <Card>
         <CardContent className="flex items-center justify-between p-4">
-          <span className="text-sm font-medium">Balance</span>
+          <span className="text-sm font-medium">{t('balance')}</span>
           <span className="text-xl font-bold text-primary">
             ${Number(player.money).toLocaleString()}
           </span>
@@ -107,13 +109,13 @@ export default function InventoryContent({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <BackpackIcon className="size-4" />
-            Your Items ({items.length})
+            {t('inventory.yourItems')} ({items.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Your inventory is empty. Scavenge or visit a shop to find items!
+              {t('inventory.empty')}
             </p>
           ) : (
             <div className="space-y-3">
@@ -129,13 +131,13 @@ export default function InventoryContent({
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <CatIcon className="size-4 text-muted-foreground" />
-                        <p className="font-medium">{def.label}</p>
+                        <p className="font-medium">{t(`item.${def.id}`)}</p>
                         <Badge variant="secondary" className="text-xs">
                           x{item.quantity}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {def.description}
+                        {t(`item.${def.id}.desc`)}
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -145,7 +147,7 @@ export default function InventoryContent({
                           disabled={isPending}
                           onClick={() => handleUse(item.itemId)}
                         >
-                          Use
+                          {t('inventory.use')}
                         </Button>
                       )}
                       <Button
@@ -154,7 +156,7 @@ export default function InventoryContent({
                         disabled={isPending}
                         onClick={() => handleSell(item.itemId)}
                       >
-                        Sell ${Math.floor(def.value * 0.5)}
+                        {t('inventory.sell')} ${Math.floor(def.value * 0.5)}
                       </Button>
                     </div>
                   </div>

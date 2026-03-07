@@ -18,6 +18,7 @@ import { useEffect } from 'react'
 import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
 import AvatarComponent from '@/avataaars-assets'
 import { useCombat } from './use-combat'
+import { useTranslation } from '@/lib/i18n'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ function HealthBar({
 
 export default function CombatContent({ player }: { player: Player }) {
     const router = useRouter()
+    const { t } = useTranslation()
 
     // Phase management
     const [phase, setPhase] = useState<CombatPhase>('select_npc')
@@ -185,9 +187,9 @@ export default function CombatContent({ player }: { player: Player }) {
             {player.isHospitalized && phase === 'select_npc' && (
                 <Alert variant="destructive">
                     <HeartPulseIcon className="size-4" />
-                    <AlertTitle>Dirawat di Rumah Sakit</AlertTitle>
+                    <AlertTitle>{t('npc.hospitalBannerTitle')}</AlertTitle>
                     <AlertDescription>
-                        Kamu sedang dirawat. Kamu tidak bisa bertarung sampai keluar dari rumah sakit.
+                        {t('npc.hospitalBanner')}
                     </AlertDescription>
                 </Alert>
             )}
@@ -208,10 +210,10 @@ export default function CombatContent({ player }: { player: Player }) {
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <UsersIcon className="size-5" />
-                                    Orang-orang di Sekitar
+                                    {t('npc.nearby')}
                                 </CardTitle>
                                 <CardDescription className="mt-1">
-                                    Temui NPC di gang gelap. Kamu bisa mengajak mereka ngobrol atau bertarung.
+                                    {t('npc.nearbyDesc')}
                                 </CardDescription>
                             </div>
                         </div>
@@ -256,7 +258,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                             onClick={() => handleSelectNpc(npc.id)}
                                             className="shrink-0"
                                         >
-                                            Temui
+                                            {t('npc.meet')}
                                         </Button>
                                     </div>
                                 )
@@ -313,8 +315,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                 onClick={handleStartChat}
                             >
                                 <MessageCircleIcon className="size-5" />
-                                <span className="text-sm font-medium">Ngobrol</span>
-                                <span className="text-[10px] text-muted-foreground">Ajak bicara</span>
+                                <span className="text-sm font-medium">{t('npc.chat')}</span>
+                                <span className="text-[10px] text-muted-foreground">{t('npc.talkTo')}</span>
                             </Button>
                             <Button
                                 variant="default"
@@ -323,8 +325,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                 onClick={() => handleStartCombat(selectedNpc.id)}
                             >
                                 <SwordsIcon className="size-5" />
-                                <span className="text-sm font-medium">Tantang</span>
-                                <span className="text-[10px] opacity-70">Ajak berantem</span>
+                                <span className="text-sm font-medium">{t('npc.challenge')}</span>
+                                <span className="text-[10px] opacity-70">{t('npc.fightWith')}</span>
                             </Button>
                         </div>
                     </CardContent>
@@ -341,7 +343,7 @@ export default function CombatContent({ player }: { player: Player }) {
                             </Button>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <MessageCircleIcon className="size-5" />
-                                Ngobrol dengan {selectedNpc.label}
+                                {t('npc.chatWith', { name: selectedNpc.label })}
                             </CardTitle>
                         </div>
                     </CardHeader>
@@ -373,7 +375,7 @@ export default function CombatContent({ player }: { player: Player }) {
                         {/* Reply options */}
                         {!chatFinished && currentReplies.length > 0 && (
                             <div className="space-y-2 border-t pt-3">
-                                <p className="text-xs text-muted-foreground">Pilih balasan:</p>
+                                <p className="text-xs text-muted-foreground">{t('npc.chooseReply')}</p>
                                 {currentReplies.map((reply, i) => (
                                     <Button
                                         key={i}
@@ -392,18 +394,18 @@ export default function CombatContent({ player }: { player: Player }) {
                         {chatFinished && (
                             <div className="border-t pt-3 space-y-3">
                                 <p className="text-sm text-muted-foreground text-center">
-                                    Percakapan selesai.
+                                    {t('npc.chatFinished')}
                                 </p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <Button variant="outline" onClick={handleBackToNpcs}>
-                                        Kembali
+                                        {t('npc.back')}
                                     </Button>
                                     <Button
                                         onClick={() => handleStartCombat(selectedNpc.id)}
                                         disabled={isPending || player.isHospitalized || player.health <= 0}
                                     >
                                         <SwordsIcon className="size-4 mr-2" />
-                                        Tantang
+                                        {t('npc.challenge')}
                                     </Button>
                                 </div>
                             </div>
@@ -421,7 +423,7 @@ export default function CombatContent({ player }: { player: Player }) {
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <p className="mb-2 text-xs text-muted-foreground font-medium">
-                                        YOU
+                                        {t('npc.you')}
                                     </p>
                                     <HealthBar
                                         label={player.name}
@@ -432,7 +434,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                 </div>
                                 <div>
                                     <p className="mb-2 text-xs text-muted-foreground font-medium">
-                                        ENEMY
+                                        {t('npc.enemy')}
                                     </p>
                                     <HealthBar
                                         label={enemyLabel}
@@ -443,7 +445,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                 </div>
                             </div>
                             <p className="text-center text-sm text-muted-foreground">
-                                Round {round} {isDefending && <Badge variant="outline" className="ml-2 text-xs"><ShieldIcon className="mr-1 h-3 w-3" /> Defending</Badge>}
+                                {t('npc.round')} {round} {isDefending && <Badge variant="outline" className="ml-2 text-xs"><ShieldIcon className="mr-1 h-3 w-3" /> {t('npc.defend')}</Badge>}
                             </p>
                         </CardContent>
                     </Card>
@@ -451,7 +453,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     {/* Action buttons */}
                     <Card>
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-base">Choose Action</CardTitle>
+                            <CardTitle className="text-base">{t('npc.chooseAction')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -462,8 +464,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <SwordsIcon className="size-5" />
-                                    <span className="text-xs">Serang</span>
-                                    <span className="text-[10px] opacity-70">Serangan seimbang</span>
+                                    <span className="text-xs">{t('npc.attack')}</span>
+                                    <span className="text-[10px] opacity-70">{t('npc.attackDesc')}</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('heavy_attack')}
@@ -472,8 +474,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3 bg-orange-600 hover:bg-orange-700"
                                 >
                                     <SwordsIcon className="size-5" />
-                                    <span className="text-xs">Serangan Kuat</span>
-                                    <span className="text-[10px] opacity-70">Dmg tinggi, akurasi rendah</span>
+                                    <span className="text-xs">{t('npc.heavyAttack')}</span>
+                                    <span className="text-[10px] opacity-70">{t('npc.heavyAttackDesc')}</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('defend')}
@@ -482,8 +484,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <ShieldCheckIcon className="size-5" />
-                                    <span className="text-xs">Bertahan</span>
-                                    <span className="text-[10px] opacity-70">Mengurangi damage musuh</span>
+                                    <span className="text-xs">{t('npc.defend')}</span>
+                                    <span className="text-[10px] opacity-70">{t('npc.defendDesc')}</span>
                                 </Button>
                                 <Button
                                     onClick={() => processTurn('flee')}
@@ -492,8 +494,8 @@ export default function CombatContent({ player }: { player: Player }) {
                                     className="flex flex-col gap-1 h-auto py-3"
                                 >
                                     <FootprintsIcon className="size-5" />
-                                    <span className="text-xs">Kabur</span>
-                                    <span className="text-[10px] opacity-70">Peluang untuk kabur</span>
+                                    <span className="text-xs">{t('npc.flee')}</span>
+                                    <span className="text-[10px] opacity-70">{t('npc.fleeDesc')}</span>
                                 </Button>
                             </div>
                         </CardContent>
@@ -503,7 +505,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     {turnLog.length > 0 && (
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm">Log Pertarungan</CardTitle>
+                                <CardTitle className="text-sm">{t('npc.battleLog')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="max-h-48 space-y-1.5 overflow-y-auto text-sm">
@@ -531,17 +533,17 @@ export default function CombatContent({ player }: { player: Player }) {
                                 {result.won ? (
                                     <>
                                         <TrophyIcon className="size-6 text-yellow-500" />
-                                        <span className="text-green-600 dark:text-green-400">Menang!</span>
+                                        <span className="text-green-600 dark:text-green-400">{t('npc.victory')}</span>
                                     </>
                                 ) : result.hospitalized ? (
                                     <>
                                         <SkullIcon className="size-6 text-red-500" />
-                                        <span className="text-red-600 dark:text-red-400">Kalah!</span>
+                                        <span className="text-red-600 dark:text-red-400">{t('npc.defeat')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <FootprintsIcon className="size-6 text-yellow-600" />
-                                        <span className="text-yellow-600 dark:text-yellow-400">Kabur</span>
+                                        <span className="text-yellow-600 dark:text-yellow-400">{t('npc.fled')}</span>
                                     </>
                                 )}
                             </CardTitle>
@@ -552,14 +554,14 @@ export default function CombatContent({ player }: { player: Player }) {
                                 <div className="grid grid-cols-2 gap-3 text-sm">
                                     <div className="flex items-center gap-2">
                                         <SwordsIcon className="size-3.5 text-orange-500" />
-                                        <span>Total damage diberikan: <strong>{turnLog.reduce((s, t) => s + t.playerDamage, 0)}</strong></span>
+                                        <span>{t('npc.totalDamageDealt')}: <strong>{turnLog.reduce((s, t) => s + t.playerDamage, 0)}</strong></span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <ShieldIcon className="size-3.5 text-blue-500" />
-                                        <span>Total damage diterima: <strong>{turnLog.reduce((s, t) => s + t.enemyDamage, 0)}</strong></span>
+                                        <span>{t('npc.totalDamageTaken')}: <strong>{turnLog.reduce((s, t) => s + t.enemyDamage, 0)}</strong></span>
                                     </div>
                                     <div className="flex items-center gap-2 text-muted-foreground">
-                                        <span>Total ronde: <strong>{turnLog.length}</strong></span>
+                                        <span>{t('npc.totalRounds')}: <strong>{turnLog.length}</strong></span>
                                     </div>
                                 </div>
                             )}
@@ -599,9 +601,9 @@ export default function CombatContent({ player }: { player: Player }) {
                             {result.hospitalized && (
                                 <Alert variant="destructive" className="mt-2">
                                     <HeartPulseIcon className="size-4" />
-                                    <AlertTitle>Masuk Rumah Sakit!</AlertTitle>
+                                    <AlertTitle>{t('npc.hospitalized')}</AlertTitle>
                                     <AlertDescription>
-                                        Kamu dikalahkan. Waktu pemulihan: {result.hospitalSeconds}s
+                                        {t('npc.hospitalizedDesc', { seconds: String(result.hospitalSeconds) })}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -612,7 +614,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     {turnLog.length > 0 && (
                         <details>
                             <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground mb-2">
-                                Lihat log pertarungan lengkap ({turnLog.length} ronde)
+                                {t('npc.viewFullLog', { count: String(turnLog.length) })}
                             </summary>
                             <Card>
                                 <CardContent className="p-4">
@@ -632,7 +634,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     )}
 
                     <Button onClick={handleBackToNpcs} className="w-full">
-                        {result.hospitalized ? 'Ke Rumah Sakit' : 'Kembali ke NPC'}
+                        {result.hospitalized ? t('npc.toHospital') : t('npc.backToNpc')}
                     </Button>
                 </>
             )}

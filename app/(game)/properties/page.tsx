@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import PropertiesContent from './properties-content'
 
 export const metadata = {
-    title: 'Real Estate | RPG Game',
+    title: 'Properti | RPG Game',
 }
 
 export default async function PropertiesPage() {
