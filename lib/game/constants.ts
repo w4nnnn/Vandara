@@ -1,3 +1,4 @@
+
 // XP required to reach a given level
 export const XP_BASE = 100
 export const XP_EXPONENT = 1.5
@@ -170,57 +171,93 @@ export const ITEMS: Record<string, ItemDef> = {
   protein_shake: { id: 'protein_shake', label: 'Protein Shake', category: 'booster', description: 'Doubles gym gains for the next training.', value: 300 },
   scrap_metal: { id: 'scrap_metal', label: 'Scrap Metal', category: 'material', description: 'Trade-in material worth some cash.', value: 25 },
   old_watch: { id: 'old_watch', label: 'Old Watch', category: 'material', description: 'A collectable trinket.', value: 75 },
+  expensive_watch: { id: 'expensive_watch', label: 'Expensive Watch', category: 'material', description: 'Looks like real gold. Sells for a lot.', value: 500 },
+  briefcase: { id: 'briefcase', label: 'Briefcase', category: 'material', description: 'A sleek leather briefcase.', value: 150 },
+  rusty_shiv: { id: 'rusty_shiv', label: 'Rusty Shiv', category: 'material', description: 'Not much of a weapon, but a collector might buy it.', value: 40 },
+  bandages: { id: 'bandages', label: 'Bandages', category: 'consumable', description: 'Restores 20 health.', value: 50, effect: { stat: 'health', amount: 20 } },
+  medkit: { id: 'medkit', label: 'Medkit', category: 'consumable', description: 'Restores 75 health.', value: 300, effect: { stat: 'health', amount: 75 } },
 }
 
+// ─── REAL ESTATE ──────────────────────────────────────────────────
+
+export interface PropertyDef {
+  id: string
+  label: string
+  locationId: string
+  cost: number
+  incomePerHour: number
+  description: string
+}
+
+export const PROPERTIES: Record<string, PropertyDef> = {
+  apartment_complex: {
+    id: 'apartment_complex',
+    label: 'Apartment Complex',
+    locationId: 'city_center',
+    cost: 50000,
+    incomePerHour: 500,
+    description: 'A modest block of flats providing steady rental income.',
+  },
+  office_building: {
+    id: 'office_building',
+    label: 'Office Building',
+    locationId: 'business_district',
+    cost: 250000,
+    incomePerHour: 3000,
+    description: 'Commercial real estate leased to corporate tenants.',
+  },
+  nightclub: {
+    id: 'nightclub',
+    label: 'The Neon Lotus Club',
+    locationId: 'dark_alley',
+    cost: 1000000,
+    incomePerHour: 15000,
+    description: 'A booming underground nightclub pulling in massive cash.',
+  },
+}
 
 
 // ─── LOCATIONS ────────────────────────────────────────────────────
 
 export type LocationId = 'city_center' | 'gym_district' | 'business_district' | 'dark_alley' | 'hospital'
 
-export interface GameLocation {
+export interface Location {
   id: LocationId
   label: string
   description: string
-  icon: string        // emoji for simple display
   facilities: string[]  // what you can do here
 }
 
-export const LOCATIONS: Record<LocationId, GameLocation> = {
+export const LOCATIONS: Record<LocationId, Location> = {
   city_center: {
     id: 'city_center',
     label: 'City Center',
     description: 'The heart of the city. A safe starting point.',
-    icon: '🏙️',
-    facilities: ['Dashboard', 'Inventory'],
+    facilities: ['Dashboard', 'Inventory', 'Scavenge', 'Shop', 'Real Estate'],
   },
   gym_district: {
     id: 'gym_district',
     label: 'Gym District',
     description: 'A district full of training facilities and dojos.',
-    icon: '💪',
-    facilities: ['Gym'],
+    facilities: ['Gym', 'Scavenge'],
   },
   business_district: {
     id: 'business_district',
     label: 'Business District',
     description: 'Corporate offices and job opportunities.',
-    icon: '🏢',
-    facilities: ['Jobs'],
+    facilities: ['Jobs', 'Scavenge', 'Real Estate'],
   },
   dark_alley: {
     id: 'dark_alley',
     label: 'Dark Alley',
     description: 'A dangerous part of town. Watch your back.',
-    icon: '🌑',
-    facilities: ['NPC'],
+    facilities: ['NPC', 'Scavenge', 'Shop', 'Real Estate'],
   },
   hospital: {
     id: 'hospital',
     label: 'Hospital',
     description: 'The city hospital. Come here to recover.',
-    icon: '🏥',
-    facilities: ['Hospital'],
+    facilities: ['Hospital', 'Scavenge'],
   },
 }
 
@@ -229,11 +266,11 @@ export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[]
 // Travel times between locations (in seconds)
 // Symmetric: time from A→B = time from B→A
 export const TRAVEL_TIMES: Record<LocationId, Record<LocationId, number>> = {
-  city_center: { city_center: 0, gym_district: 15, business_district: 20, dark_alley: 30, hospital: 25 },
-  gym_district: { city_center: 15, gym_district: 0, business_district: 25, dark_alley: 35, hospital: 30 },
-  business_district: { city_center: 20, gym_district: 25, business_district: 0, dark_alley: 40, hospital: 20 },
-  dark_alley: { city_center: 30, gym_district: 35, business_district: 40, dark_alley: 0, hospital: 45 },
-  hospital: { city_center: 25, gym_district: 30, business_district: 20, dark_alley: 45, hospital: 0 },
+  city_center: { city_center: 0, gym_district: 3, business_district: 4, dark_alley: 6, hospital: 5 },
+  gym_district: { city_center: 3, gym_district: 0, business_district: 5, dark_alley: 7, hospital: 6 },
+  business_district: { city_center: 4, gym_district: 5, business_district: 0, dark_alley: 8, hospital: 4 },
+  dark_alley: { city_center: 6, gym_district: 7, business_district: 8, dark_alley: 0, hospital: 9 },
+  hospital: { city_center: 5, gym_district: 6, business_district: 4, dark_alley: 9, hospital: 0 },
 }
 
 // Which location is required for each activity

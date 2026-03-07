@@ -120,15 +120,46 @@ export async function getPlayer() {
     currentLocation = travelingTo
     travelingTo = null
     travelingUntil = null
+
+    let lastEncounterMsg = player.lastEncounterMsg
+    let updatedMoney = player.money
+    let updatedHealth = player.health
+
+    // 1% Chance for a random encounter upon completing travel
+    if (Math.random() < 0.01) {
+      const eventRoll = Math.random()
+      if (eventRoll < 0.33) {
+        const found = Math.floor(Math.random() * 401) + 100 // $100-$500
+        updatedMoney += found
+        lastEncounterMsg = `While traveling to ${currentLocation}, you found $${found} dropped on the street!`
+      } else if (eventRoll < 0.66) {
+        const lost = Math.floor(Math.random() * 201) + 50 // $50 - $250
+        updatedMoney = Math.max(0, updatedMoney - lost)
+        lastEncounterMsg = `A pickpocket bumped into you on your way to ${currentLocation}! You lost $${lost}.`
+      } else {
+        const damage = Math.floor(Math.random() * 11) + 5 // 5 - 15 dmg
+        updatedHealth = Math.max(1, updatedHealth - damage)
+        lastEncounterMsg = `You tripped over some debris on your way to ${currentLocation} and took ${damage} damage.`
+      }
+    }
+
     await db
       .update(players)
       .set({
         currentLocation,
         travelingTo: null,
         travelingUntil: null,
+        lastEncounterMsg,
+        money: updatedMoney,
+        health: updatedHealth,
         updatedAt: now,
       })
       .where(eq(players.id, player.id))
+
+    // Update local variables for return explicitly
+    player.lastEncounterMsg = lastEncounterMsg
+    player.money = updatedMoney
+    player.health = updatedHealth
   }
 
   // Apply stat regeneration based on elapsed time
@@ -163,4 +194,16 @@ export async function getPlayer() {
     travelingUntil,
     avatar,
   }
+}
+
+export async function dismissEncounterMessage() {
+  const player = await getPlayer()
+  if (!player) return { error: 'Not logged in' }
+
+  await db
+    .update(players)
+    .set({ lastEncounterMsg: null })
+    .where(eq(players.id, player.id))
+
+  return { success: true }
 }

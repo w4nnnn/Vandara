@@ -24,6 +24,7 @@ export const players = pgTable('players', {
   currentLocation: varchar('current_location', { length: 50 }).notNull().default('city_center'),
   travelingTo: varchar('traveling_to', { length: 50 }),
   travelingUntil: timestamp('traveling_until'),
+  lastEncounterMsg: varchar('last_encounter_msg', { length: 255 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -96,4 +97,14 @@ export const combatLogs = pgTable('combat_logs', {
   moneyEarned: integer('money_earned').notNull().default(0),
   xpEarned: integer('xp_earned').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Real Estate Properties
+export const playerProperties = pgTable('player_properties', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  propertyId: varchar('property_id', { length: 50 }).notNull(),
+  lastCollectedAt: timestamp('last_collected_at').notNull().defaultNow(),
 })

@@ -11,7 +11,7 @@ import {
     HeartIcon, SkullIcon, TrophyIcon, AlertTriangleIcon,
     CoinsIcon, StarIcon, PackageIcon, HeartPulseIcon,
     ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
-    UsersIcon, ArrowLeftIcon,
+    UsersIcon, ArrowLeftIcon, ActivityIcon, PartyPopperIcon
 } from 'lucide-react'
 // Trigger HMR
 import { useEffect } from 'react'
@@ -300,9 +300,9 @@ export default function CombatContent({ player }: { player: Player }) {
                             </span>
                         </div>
                         <div className="flex flex-wrap gap-x-3 text-xs">
-                            <span className="text-green-600">💰 ${selectedNpc.moneyDrop[0]}–${selectedNpc.moneyDrop[1]}</span>
-                            <span className="text-blue-600">⭐ {selectedNpc.xpDrop} XP</span>
-                            <span className="text-orange-600">⚡ {selectedNpc.nerveCost} nerve</span>
+                            <span className="flex items-center gap-1 text-green-600"><CoinsIcon className="h-4 w-4" /> ${selectedNpc.moneyDrop[0]}–${selectedNpc.moneyDrop[1]}</span>
+                            <span className="flex items-center gap-1 text-blue-600"><StarIcon className="h-4 w-4" /> {selectedNpc.xpDrop} XP</span>
+                            <span className="flex items-center gap-1 text-orange-600"><ActivityIcon className="h-4 w-4" /> {selectedNpc.nerveCost} nerve</span>
                         </div>
 
                         {/* Action buttons */}
@@ -443,7 +443,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                 </div>
                             </div>
                             <p className="text-center text-sm text-muted-foreground">
-                                Round {round} {isDefending && <Badge variant="outline" className="ml-2 text-xs">🛡️ Defending</Badge>}
+                                Round {round} {isDefending && <Badge variant="outline" className="ml-2 text-xs"><ShieldIcon className="mr-1 h-3 w-3" /> Defending</Badge>}
                             </p>
                         </CardContent>
                     </Card>
@@ -578,7 +578,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                         </Badge>
                                         {result.leveledUp && (
                                             <Badge className="gap-1 bg-yellow-500 text-yellow-950">
-                                                🎉 Level {result.newLevel}!
+                                                <PartyPopperIcon className="inline mr-1 h-4 w-4" /> Level {result.newLevel}!
                                             </Badge>
                                         )}
                                     </div>

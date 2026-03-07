@@ -13,7 +13,12 @@ import {
     AlertTriangleIcon,
     HeartPulseIcon,
     CheckCircleIcon,
+    BuildingIcon,
+    DumbbellIcon,
+    BriefcaseIcon,
+    HospitalIcon,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { startTravel } from '@/app/actions/travel'
 import { LOCATIONS, TRAVEL_TIMES, LOCATION_IDS, type LocationId } from '@/lib/game/constants'
 
@@ -25,6 +30,14 @@ type Player = {
     travelingTo: string | null
     travelingUntil: Date | null
     isHospitalized: boolean
+}
+
+const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
+    city_center: BuildingIcon,
+    gym_district: DumbbellIcon,
+    business_district: BriefcaseIcon,
+    dark_alley: MapPinIcon,
+    hospital: HospitalIcon,
 }
 
 function formatCountdown(ms: number): string {
@@ -133,8 +146,9 @@ export default function TravelContent({ player }: { player: Player }) {
                         <div className="flex items-center gap-3">
                             <MapPinIcon className="size-6 text-primary" />
                             <div>
-                                <p className="font-semibold">
-                                    {currentLoc?.icon} {currentLoc?.label ?? player.currentLocation}
+                                <p className="font-semibold flex items-center gap-1.5">
+                                    {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-4 text-muted-foreground" /> })()}
+                                    {currentLoc?.label ?? player.currentLocation}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                     {currentLoc?.description}
@@ -178,7 +192,9 @@ export default function TravelContent({ player }: { player: Player }) {
                                 >
                                     <div className="flex-1 space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg">{loc.icon}</span>
+                                            <div className="flex shrink-0 items-center justify-center rounded-md bg-muted p-1.5 text-muted-foreground border">
+                                                {(() => { const Icon = LOCATION_ICONS[loc.id]; return <Icon className="size-4" /> })()}
+                                            </div>
                                             <h3 className="font-semibold">{loc.label}</h3>
                                             {isCurrent && (
                                                 <Badge className="gap-1 text-xs">

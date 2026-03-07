@@ -9,12 +9,14 @@ import { Progress } from '@/components/ui/progress'
 import { trainGym } from '@/app/actions/gym'
 import { GYM_EXERCISES, type GymStat } from '@/lib/game/constants'
 import {
-  BoltIcon,
   SwordIcon,
   ShieldIcon,
   ZapIcon,
   TargetIcon,
   DumbbellIcon,
+  HeartIcon,
+  InfoIcon,
+  BoltIcon
 } from 'lucide-react'
 
 type Player = {
@@ -87,11 +89,10 @@ export default function GymContent({ player }: { player: Player }) {
           return (
             <Card
               key={stat}
-              className={`cursor-pointer transition-colors ${
-                selectedStat === stat
-                  ? 'border-primary ring-1 ring-primary'
-                  : 'hover:border-muted-foreground/30'
-              }`}
+              className={`cursor-pointer transition-colors ${selectedStat === stat
+                ? 'border-primary ring-1 ring-primary'
+                : 'hover:border-muted-foreground/30'
+                }`}
               onClick={() => setSelectedStat(stat)}
             >
               <CardContent className="flex items-center gap-3 p-3">
@@ -157,7 +158,7 @@ export default function GymContent({ player }: { player: Player }) {
                     +{ex.baseGain} {ex.stat}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    ⚡ {ex.energyCost} energy
+                    <span className="flex items-center gap-1"><ZapIcon className="h-3 w-3 text-orange-400" /> {ex.energyCost} energy</span>
                   </Badge>
                 </div>
               </div>

@@ -1,8 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback, useTransition } from 'react'
+import { dismissEncounterMessage } from '@/app/actions/character'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -17,7 +20,13 @@ import {
   BrainIcon,
   SmileIcon,
   CoinsIcon,
+  BuildingIcon,
+  AlertTriangleIcon,
+  HospitalIcon,
+  SearchIcon,
+  StoreIcon,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   LOCATIONS,
   ACTIVITY_LOCATIONS,
@@ -31,6 +40,21 @@ import {
   HAPPY_REGEN_INTERVAL_MS,
   type LocationId,
 } from '@/lib/game/constants'
+
+const ACTIVITY_LABEL_MAP: Record<string, string> = {
+  gym: 'Training',
+  combat: 'Fighting',
+  jobs: 'Working',
+  hospital: 'Recovering'
+}
+
+const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
+  city_center: BuildingIcon,
+  gym_district: DumbbellIcon,
+  business_district: BriefcaseIcon,
+  dark_alley: MapPinIcon,
+  hospital: HospitalIcon,
+}
 
 type Player = {
   id: number
@@ -48,6 +72,7 @@ type Player = {
   currentLocation: string
   travelingTo: string | null
   travelingUntil: Date | null
+  lastEncounterMsg: string | null
   updatedAt: Date
   isHospitalized: boolean
   avatar?: Record<string, any> | null
@@ -56,6 +81,8 @@ type Player = {
 const NAV_ITEMS = [
   { label: 'Home', href: '/dashboard', icon: LayoutDashboardIcon, activity: null },
   { label: 'Travel', href: '/travel', icon: PlaneIcon, activity: null },
+  { label: 'Scavenge', href: '/scavenge', icon: SearchIcon, activity: null },
+  { label: 'Shop', href: '/shop', icon: StoreIcon, activity: null },
   { label: 'NPC', href: '/npc', icon: UsersIcon, activity: 'combat' as const },
   { label: 'Gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
   { label: 'Jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
@@ -105,6 +132,9 @@ export default function GameLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [hideEncounter, setHideEncounter] = useState(false)
 
   // Client-side regen simulation for HUD
   const computeStats = useCallback(() => {
@@ -145,6 +175,14 @@ export default function GameLayoutClient({
 
   const currentLoc = LOCATIONS[player.currentLocation as LocationId]
 
+  function handleDismissEncounter() {
+    setHideEncounter(true)
+    startTransition(async () => {
+      await dismissEncounterMessage()
+      router.refresh()
+    })
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       {/* ═══ TOP HUD BAR ═══ */}
@@ -157,11 +195,14 @@ export default function GameLayoutClient({
           >
             <MapPinIcon className="size-3.5 text-primary" />
             {isTraveling ? (
-              <span className="text-yellow-400 animate-pulse">
-                ✈️ {Math.ceil(travelCountdown / 1000)}s
-              </span>
+              <div className="absolute flex items-center gap-1 -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary/20 px-3 py-0.5 text-[10px] sm:text-xs font-bold text-primary backdrop-blur-md">
+                <PlaneIcon className="size-3" /> {Math.ceil(travelCountdown / 1000)}s
+              </div>
             ) : (
-              <span>{currentLoc?.icon} {currentLoc?.label ?? 'Unknown'}</span>
+              <span className="flex items-center gap-1.5">
+                {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-3.5 text-muted-foreground" /> })()}
+                {currentLoc?.label ?? 'Unknown'}
+              </span>
             )}
           </Link>
 
@@ -186,14 +227,28 @@ export default function GameLayoutClient({
 
         {/* Hospitalized banner */}
         {player.isHospitalized && (
-          <div className="bg-red-900/80 text-center text-xs text-red-200 py-1 font-medium">
-            🏥 Hospitalized — All activities blocked
+          <div className="flex items-center justify-center gap-1.5 bg-red-900/80 text-center text-xs text-red-200 py-1 font-medium">
+            <HospitalIcon className="size-3.5" /> Hospitalized — All activities blocked
           </div>
         )}
       </header>
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <main className="mx-auto w-full max-w-2xl flex-1 p-4 pb-20">
+      <main className="mx-auto w-full max-w-2xl flex-1 p-4 pb-20 space-y-4">
+        {/* Random Encounter Banner */}
+        {player.lastEncounterMsg && !hideEncounter && (
+          <Alert className="border-primary/50 bg-primary/10">
+            <AlertTriangleIcon className="size-4" />
+            <AlertTitle>Random Encounter</AlertTitle>
+            <AlertDescription className="mt-2 flex flex-col gap-3">
+              <p>{player.lastEncounterMsg}</p>
+              <Button size="sm" onClick={handleDismissEncounter} disabled={isPending} className="w-fit">
+                {isPending ? 'Dismissing...' : 'Continue'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {children}
       </main>
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { DumbbellIcon, BrainIcon, HeartIcon, ZapIcon, DicesIcon, SwordsIcon } from 'lucide-react'
 import AvatarComponent from '@/avataaars-assets'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -159,7 +160,7 @@ export default function CreateCharacterPage() {
                 {name || 'Your Character'}
               </p>
               <Button variant="outline" size="sm" onClick={randomize}>
-                🎲 Randomize
+                <DicesIcon className="mr-2 h-4 w-4" /> Randomize
               </Button>
             </CardContent>
           </Card>
@@ -280,7 +281,7 @@ export default function CreateCharacterPage() {
               onClick={handleSubmit}
               disabled={isPending || !name.trim()}
             >
-              {isPending ? 'Creating...' : '⚔️ Enter the City'}
+              {isPending ? 'Creating...' : <><SwordsIcon className="mr-2 h-4 w-4" /> Enter the City</>}
             </Button>
           </CardContent>
         </Card>

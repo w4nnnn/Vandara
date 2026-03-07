@@ -14,6 +14,9 @@ import {
   CheckCircleIcon,
   LockIcon,
   ArrowRightIcon,
+  CoinsIcon,
+  StarIcon,
+  PartyPopperIcon,
 } from 'lucide-react'
 
 type Player = {
@@ -97,10 +100,10 @@ export default function JobsContent({ player }: { player: Player }) {
                 <p className="text-sm text-muted-foreground">
                   {currentJob.description}
                 </p>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="secondary">💰 ${currentJob.pay}</Badge>
-                  <Badge variant="secondary">⭐ {currentJob.xp} XP</Badge>
-                  <Badge variant="outline">🧠 {currentJob.nerveCost} nerve</Badge>
+                <div className="flex flex-wrap gap-2 text-xs mt-1">
+                  <Badge variant="secondary" className="flex items-center gap-1"><CoinsIcon className="h-3 w-3" /> ${currentJob.pay}</Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1"><StarIcon className="h-3 w-3" /> {currentJob.xp} XP</Badge>
+                  <Badge variant="outline" className="flex items-center gap-1"><BrainIcon className="h-3 w-3" /> {currentJob.nerveCost} nerve</Badge>
                 </div>
               </div>
             </div>
@@ -134,9 +137,10 @@ export default function JobsContent({ player }: { player: Player }) {
             ) : (
               <span className="text-green-600 dark:text-green-400">
                 Earned ${result.moneyEarned} and {result.xpEarned} XP!
+                <br />
                 {result.leveledUp && (
-                  <span className="ml-1 font-bold">
-                    🎉 Level up! You are now level {result.newLevel}!
+                  <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 mt-1">
+                    <PartyPopperIcon className="h-4 w-4" /> Level up! You are now level {result.newLevel}!
                   </span>
                 )}
               </span>
@@ -160,9 +164,8 @@ export default function JobsContent({ player }: { player: Player }) {
             return (
               <div
                 key={job.id}
-                className={`flex items-center justify-between rounded-lg border p-3 ${
-                  locked ? 'opacity-50' : ''
-                } ${isCurrent ? 'border-primary bg-primary/5' : ''}`}
+                className={`flex items-center justify-between rounded-lg border p-3 ${locked ? 'opacity-50' : ''
+                  } ${isCurrent ? 'border-primary bg-primary/5' : ''}`}
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
@@ -175,14 +178,14 @@ export default function JobsContent({ player }: { player: Player }) {
                     {job.description}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <Badge variant="secondary" className="text-xs">
-                      💰 ${job.pay}
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <CoinsIcon className="h-3 w-3" /> ${job.pay}
                     </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      ⭐ {job.xp} XP
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <StarIcon className="h-3 w-3" /> {job.xp} XP
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      🧠 {job.nerveCost} nerve
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <BrainIcon className="h-3 w-3" /> {job.nerveCost} nerve
                     </Badge>
                     {locked && (
                       <Badge variant="destructive" className="text-xs">
