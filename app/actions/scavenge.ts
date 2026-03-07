@@ -20,7 +20,10 @@ import {
     ITEMS,
     JUNK_IDS,
     getStreakBonus,
+    REP_GAINS,
 } from '@/lib/game/constants'
+import { trackQuestProgress } from './quests'
+import { addReputation } from './reputation'
 
 export type LootResult = {
     itemId: string
@@ -363,6 +366,10 @@ export async function scavenge(spotId: string | null = null, doubleMode = false)
         streak: newStreak,
         doubleMode,
     })
+
+    // Quest & reputation tracking
+    await trackQuestProgress(player.id, 'scavenge', locationId)
+    await addReputation(player.id, locationId, REP_GAINS.scavenge)
 
     return {
         success: true,

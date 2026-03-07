@@ -26,6 +26,11 @@ const id = {
   'nav.jobs': 'Kerja',
   'nav.hospital': 'RS',
   'nav.inventory': 'Inventaris',
+  'nav.quests': 'Misi',
+  'nav.crafting': 'Crafting',
+  'nav.skills': 'Skill',
+  'nav.equipment': 'Peralatan',
+  'nav.minigames': 'Mini-Game',
 
   // ── HUD ─────────────────────────────────────────────
   'hud.hospitalized': 'Dirawat — Semua aktivitas diblokir',
@@ -423,6 +428,11 @@ const en: Record<string, string> = {
   'nav.jobs': 'Jobs',
   'nav.hospital': 'Hospital',
   'nav.inventory': 'Inventory',
+  'nav.quests': 'Quests',
+  'nav.crafting': 'Crafting',
+  'nav.skills': 'Skills',
+  'nav.equipment': 'Equipment',
+  'nav.minigames': 'Mini-Games',
 
   // ── HUD ─────────────────────────────────────────────
   'hud.hospitalized': 'Hospitalized — All activities blocked',

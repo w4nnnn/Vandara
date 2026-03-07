@@ -4,7 +4,9 @@ import { db } from '@/lib/db'
 import { players, jobLogs } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { getPlayer } from './character'
-import { JOBS, xpForLevel } from '@/lib/game/constants'
+import { JOBS, xpForLevel, REP_GAINS, SKILL_POINTS_PER_LEVEL, type LocationId } from '@/lib/game/constants'
+import { trackQuestProgress } from './quests'
+import { addReputation } from './reputation'
 
 export async function applyForJob(jobId: string) {
   const player = await getPlayer()
@@ -86,6 +88,18 @@ export async function work() {
   })
 
   const leveledUp = newLevel > player.level
+
+  // Award skill points on level up
+  if (leveledUp) {
+    const levelsGained = newLevel - player.level
+    await db.update(players).set({
+      skillPoints: sql`${players.skillPoints} + ${levelsGained * SKILL_POINTS_PER_LEVEL}`,
+    }).where(eq(players.id, player.id))
+  }
+
+  // Quest & reputation tracking
+  await trackQuestProgress(player.id, 'job_work', player.currentLocation as LocationId)
+  await addReputation(player.id, player.currentLocation as LocationId, REP_GAINS.job_work)
 
   return {
     success: true,

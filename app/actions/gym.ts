@@ -4,7 +4,9 @@ import { db } from '@/lib/db'
 import { players, gymLogs } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { getPlayer } from './character'
-import { GYM_EXERCISES, type GymStat } from '@/lib/game/constants'
+import { GYM_EXERCISES, REP_GAINS, type GymStat, type LocationId } from '@/lib/game/constants'
+import { trackQuestProgress } from './quests'
+import { addReputation } from './reputation'
 
 export async function trainGym(exerciseId: string) {
   const player = await getPlayer()
@@ -43,6 +45,10 @@ export async function trainGym(exerciseId: string) {
     gained: gain,
     energySpent: exercise.energyCost,
   })
+
+  // Quest & reputation tracking
+  await trackQuestProgress(player.id, 'gym_train', player.currentLocation as LocationId)
+  await addReputation(player.id, player.currentLocation as LocationId, REP_GAINS.gym_train)
 
   return {
     success: true,

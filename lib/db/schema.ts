@@ -30,6 +30,13 @@ export const players = pgTable('players', {
   scavengeStreak: integer('scavenge_streak').notNull().default(0),
   scavengeStreakLocation: varchar('scavenge_streak_location', { length: 50 }),
   equippedTool: varchar('equipped_tool', { length: 50 }),
+  // Equipment slots
+  equippedWeapon: varchar('equipped_weapon', { length: 50 }),
+  equippedArmor: varchar('equipped_armor', { length: 50 }),
+  equippedAccessory: varchar('equipped_accessory', { length: 50 }),
+  // Skill tree
+  skillPoints: integer('skill_points').notNull().default(0),
+  unlockedSkills: varchar('unlocked_skills', { length: 500 }).notNull().default('[]'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -129,4 +136,27 @@ export const playerProperties = pgTable('player_properties', {
     .references(() => players.id),
   propertyId: varchar('property_id', { length: 50 }).notNull(),
   lastCollectedAt: timestamp('last_collected_at').notNull().defaultNow(),
+})
+
+// Player Quests
+export const playerQuests = pgTable('player_quests', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  questId: varchar('quest_id', { length: 50 }).notNull(),
+  progress: integer('progress').notNull().default(0),
+  completed: boolean('completed').notNull().default(false),
+  claimed: boolean('claimed').notNull().default(false),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+})
+
+// Player Reputation per location
+export const playerReputation = pgTable('player_reputation', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  locationId: varchar('location_id', { length: 50 }).notNull(),
+  reputation: integer('reputation').notNull().default(0),
 })

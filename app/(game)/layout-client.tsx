@@ -29,6 +29,11 @@ import {
   StoreIcon,
   ArrowRightLeftIcon,
   LanguagesIcon,
+  ScrollTextIcon,
+  HammerIcon,
+  SparklesIcon,
+  SwordIcon,
+  DicesIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -86,6 +91,11 @@ const NAV_KEYS = [
   { key: 'nav.jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
   { key: 'nav.hospital', href: '/hospital', icon: HeartPulseIcon, activity: 'hospital' as const },
   { key: 'nav.inventory', href: '/inventory', icon: BackpackIcon, activity: null },
+  { key: 'nav.quests', href: '/quests', icon: ScrollTextIcon, activity: null },
+  { key: 'nav.crafting', href: '/crafting', icon: HammerIcon, activity: null },
+  { key: 'nav.skills', href: '/skills', icon: SparklesIcon, activity: null },
+  { key: 'nav.equipment', href: '/equipment', icon: SwordIcon, activity: null },
+  { key: 'nav.minigames', href: '/minigames', icon: DicesIcon, activity: null },
 ]
 
 // ─── Compact HUD Stat Bar ────────────────────────────────────────

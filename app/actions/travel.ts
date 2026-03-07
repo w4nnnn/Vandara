@@ -5,6 +5,7 @@ import { players } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { getPlayer } from './character'
 import { LOCATIONS, TRAVEL_TIMES, type LocationId } from '@/lib/game/constants'
+import { trackQuestProgress } from './quests'
 
 export async function startTravel(destinationId: string) {
     const player = await getPlayer()
@@ -40,6 +41,9 @@ export async function startTravel(destinationId: string) {
             updatedAt: new Date(),
         })
         .where(eq(players.id, player.id))
+
+    // Track quest progress
+    await trackQuestProgress(player.id, 'travel')
 
     return {
         success: true,

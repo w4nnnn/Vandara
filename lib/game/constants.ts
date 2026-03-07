@@ -168,7 +168,7 @@ export const RARITY_BG: Record<ItemRarity, string> = {
 
 // ─── ITEMS ────────────────────────────────────────────────────────
 
-export type ItemCategory = 'consumable' | 'booster' | 'material' | 'junk' | 'tool'
+export type ItemCategory = 'consumable' | 'booster' | 'material' | 'junk' | 'tool' | 'weapon' | 'armor' | 'accessory'
 
 export interface ItemDef {
   id: string
@@ -188,6 +188,9 @@ export interface ItemDef {
     rareBonus?: number           // increase rare/epic drop chance by %
     materialBonus?: number       // increase material drop chance by %
   }
+  /** Equipment combat bonuses */
+  combatBonus?: CombatBonus
+  equipSlot?: EquipmentSlot
 }
 
 export const ITEMS: Record<string, ItemDef> = {
@@ -216,6 +219,19 @@ export const ITEMS: Record<string, ItemDef> = {
   flashlight: { id: 'flashlight', label: 'Senter', category: 'tool', rarity: 'uncommon', description: 'Mengurangi peluang tidak menemukan apa-apa saat memulung.', value: 500, toolEffect: { nothingReduction: 30 } },
   metal_detector: { id: 'metal_detector', label: 'Detektor Logam', category: 'tool', rarity: 'rare', description: 'Meningkatkan peluang menemukan material dan uang.', value: 1500, toolEffect: { materialBonus: 25, moneyBonus: 1.3 } },
   lucky_gloves: { id: 'lucky_gloves', label: 'Sarung Tangan Keberuntungan', category: 'tool', rarity: 'epic', description: 'Meningkatkan peluang mendapatkan item langka.', value: 3000, toolEffect: { rareBonus: 20 } },
+  // ── Weapons ──
+  pipe_wrench: { id: 'pipe_wrench', label: 'Kunci Pipa', category: 'weapon', rarity: 'uncommon', description: 'Senjata improv sederhana tapi efektif.', value: 200, equipSlot: 'weapon', combatBonus: { attack: 5 } },
+  combat_knife: { id: 'combat_knife', label: 'Pisau Tempur', category: 'weapon', rarity: 'rare', description: 'Pisau tajam untuk pertarungan jarak dekat.', value: 600, equipSlot: 'weapon', combatBonus: { attack: 12, speed: 3 } },
+  taser: { id: 'taser', label: 'Taser', category: 'weapon', rarity: 'epic', description: 'Setrum musuh, buat mereka lambat.', value: 1500, equipSlot: 'weapon', combatBonus: { attack: 18, dexterity: 5 } },
+  // ── Armor ──
+  leather_jacket: { id: 'leather_jacket', label: 'Jaket Kulit', category: 'armor', rarity: 'uncommon', description: 'Perlindungan dasar yang bergaya.', value: 350, equipSlot: 'armor', combatBonus: { defense: 5, maxHp: 10 } },
+  kevlar_vest: { id: 'kevlar_vest', label: 'Rompi Kevlar', category: 'armor', rarity: 'epic', description: 'Pelindung berat anti-peluru.', value: 2000, equipSlot: 'armor', combatBonus: { defense: 18, maxHp: 30 } },
+  // ── Accessories ──
+  lucky_charm: { id: 'lucky_charm', label: 'Jimat Keberuntungan', category: 'accessory', rarity: 'rare', description: 'Meningkatkan keberuntungan keseluruhan.', value: 800, equipSlot: 'accessory', combatBonus: { dexterity: 5, speed: 3 } },
+  gold_ring: { id: 'gold_ring', label: 'Cincin Emas', category: 'accessory', rarity: 'epic', description: 'Cincin mewah yang meningkatkan semua stat.', value: 3000, equipSlot: 'accessory', combatBonus: { attack: 5, defense: 5, speed: 3, dexterity: 3 } },
+  // ── Advanced Consumables ──
+  advanced_medkit: { id: 'advanced_medkit', label: 'Medkit Lanjut', category: 'consumable', rarity: 'epic', description: 'Memulihkan 150 kesehatan.', value: 700, effect: { stat: 'health', amount: 150 } },
+  super_energy: { id: 'super_energy', label: 'Super Energy', category: 'consumable', rarity: 'rare', description: 'Memulihkan 75 energi.', value: 500, effect: { stat: 'energy', amount: 75 } },
 }
 
 // ─── SCAVENGE TOOLS ───────────────────────────────────────────────
@@ -641,10 +657,301 @@ export const TRAVEL_TIMES: Record<LocationId, Record<LocationId, number>> = {
   hospital: { city_center: 5, gym_district: 6, business_district: 4, dark_alley: 9, hospital: 0 },
 }
 
-// Which location is required for each activity
 export const ACTIVITY_LOCATIONS: Record<string, LocationId> = {
   gym: 'gym_district',
   jobs: 'business_district',
   combat: 'dark_alley',
   hospital: 'hospital',
+}
+
+// ─── QUESTS ──────────────────────────────────────────────────────
+
+export type QuestObjective = 'scavenge' | 'combat_win' | 'gym_train' | 'job_work' | 'travel' | 'craft' | 'shop_buy'
+
+export interface QuestDef {
+  id: string
+  label: string
+  description: string
+  objective: QuestObjective
+  target: number             // how many times
+  locationId?: LocationId    // optional location requirement
+  rewards: {
+    money?: number
+    xp?: number
+    itemId?: string
+    itemQty?: number
+    reputation?: { locationId: LocationId; amount: number }
+  }
+}
+
+export const DAILY_QUESTS: QuestDef[] = [
+  {
+    id: 'q_scavenge_5', label: 'Pemulung Rajin', description: 'Mulung 5 kali di lokasi manapun.', objective: 'scavenge', target: 5,
+    rewards: { money: 500, xp: 50 }
+  },
+  {
+    id: 'q_combat_3', label: 'Petarung Jalanan', description: 'Menangkan 3 pertarungan NPC.', objective: 'combat_win', target: 3,
+    rewards: { money: 1000, xp: 80, reputation: { locationId: 'dark_alley', amount: 20 } }
+  },
+  {
+    id: 'q_gym_3', label: 'Atlet Pemula', description: 'Latihan di gym 3 kali.', objective: 'gym_train', target: 3,
+    rewards: { money: 300, xp: 40, itemId: 'protein_shake', itemQty: 1 }
+  },
+  {
+    id: 'q_job_2', label: 'Pekerja Keras', description: 'Bekerja 2 kali.', objective: 'job_work', target: 2,
+    rewards: { money: 800, xp: 60 }
+  },
+  {
+    id: 'q_travel_3', label: 'Penjelajah', description: 'Travel ke 3 lokasi berbeda.', objective: 'travel', target: 3,
+    rewards: { money: 300, xp: 30 }
+  },
+  {
+    id: 'q_scavenge_da', label: 'Penjelajah Gelap', description: 'Mulung 3 kali di Dark Alley.', objective: 'scavenge', target: 3, locationId: 'dark_alley',
+    rewards: { money: 700, xp: 60, reputation: { locationId: 'dark_alley', amount: 15 } }
+  },
+  {
+    id: 'q_craft_1', label: 'Pengrajin', description: 'Craft 1 item apapun.', objective: 'craft', target: 1,
+    rewards: { money: 400, xp: 50 }
+  },
+  {
+    id: 'q_shop_2', label: 'Pembeli Setia', description: 'Beli 2 item dari toko.', objective: 'shop_buy', target: 2,
+    rewards: { money: 200, xp: 30 }
+  },
+]
+
+export const DAILY_QUEST_COUNT = 3 // how many quests assigned per day
+
+// ─── CRAFTING ────────────────────────────────────────────────────
+
+export interface CraftingRecipe {
+  id: string
+  label: string
+  inputs: { itemId: string; quantity: number }[]
+  output: { itemId: string; quantity: number }
+  levelRequired: number       // player level
+  scavengeLevelRequired: number
+  category: 'weapon' | 'armor' | 'consumable' | 'tool'
+}
+
+export const CRAFTING_RECIPES: CraftingRecipe[] = [
+  // Weapons
+  {
+    id: 'craft_pipe_wrench', label: 'Kunci Pipa', category: 'weapon',
+    inputs: [{ itemId: 'scrap_metal', quantity: 5 }, { itemId: 'rusty_screw', quantity: 3 }],
+    output: { itemId: 'pipe_wrench', quantity: 1 }, levelRequired: 3, scavengeLevelRequired: 2
+  },
+  {
+    id: 'craft_combat_knife', label: 'Pisau Tempur', category: 'weapon',
+    inputs: [{ itemId: 'scrap_metal', quantity: 8 }, { itemId: 'rusty_shiv', quantity: 2 }, { itemId: 'torn_fabric', quantity: 3 }],
+    output: { itemId: 'combat_knife', quantity: 1 }, levelRequired: 6, scavengeLevelRequired: 4
+  },
+  {
+    id: 'craft_taser', label: 'Taser', category: 'weapon',
+    inputs: [{ itemId: 'old_battery', quantity: 8 }, { itemId: 'scrap_metal', quantity: 5 }, { itemId: 'broken_plastic', quantity: 4 }],
+    output: { itemId: 'taser', quantity: 1 }, levelRequired: 10, scavengeLevelRequired: 6
+  },
+  // Armor
+  {
+    id: 'craft_leather_jacket', label: 'Jaket Kulit', category: 'armor',
+    inputs: [{ itemId: 'torn_fabric', quantity: 8 }, { itemId: 'rusty_screw', quantity: 4 }],
+    output: { itemId: 'leather_jacket', quantity: 1 }, levelRequired: 4, scavengeLevelRequired: 3
+  },
+  {
+    id: 'craft_kevlar_vest', label: 'Rompi Kevlar', category: 'armor',
+    inputs: [{ itemId: 'scrap_metal', quantity: 12 }, { itemId: 'torn_fabric', quantity: 10 }, { itemId: 'broken_plastic', quantity: 6 }],
+    output: { itemId: 'kevlar_vest', quantity: 1 }, levelRequired: 12, scavengeLevelRequired: 7
+  },
+  // Consumables
+  {
+    id: 'craft_adv_medkit', label: 'Medkit Lanjut', category: 'consumable',
+    inputs: [{ itemId: 'medkit', quantity: 1 }, { itemId: 'bandages', quantity: 3 }, { itemId: 'old_battery', quantity: 2 }],
+    output: { itemId: 'advanced_medkit', quantity: 1 }, levelRequired: 8, scavengeLevelRequired: 5
+  },
+  {
+    id: 'craft_super_energy', label: 'Super Energy', category: 'consumable',
+    inputs: [{ itemId: 'energy_drink', quantity: 2 }, { itemId: 'protein_shake', quantity: 1 }],
+    output: { itemId: 'super_energy', quantity: 1 }, levelRequired: 5, scavengeLevelRequired: 3
+  },
+]
+
+// ─── SKILL TREES ─────────────────────────────────────────────────
+
+export type SkillTreeId = 'combat' | 'stealth' | 'trading'
+
+export interface SkillDef {
+  id: string
+  tree: SkillTreeId
+  label: string
+  description: string
+  cost: number                // skill points needed
+  levelRequired: number
+  prerequisite?: string       // skill id that must be unlocked first
+  bonus: {
+    attackPercent?: number    // +% attack
+    defensePercent?: number   // +% defense
+    critChance?: number       // +% crit
+    maxHpBonus?: number       // flat HP bonus
+    scavengeLuck?: number     // +% scavenge useful item chance
+    dodgeChance?: number      // +% dodge in combat
+    stealBonus?: number       // +% money from combat
+    shopDiscount?: number     // -% shop prices
+    sellBonus?: number        // +% sell prices
+    jobPayBonus?: number      // +% job pay
+    xpBonus?: number          // +% XP from all actions
+  }
+}
+
+export const SKILLS: SkillDef[] = [
+  // Combat Tree
+  {
+    id: 'c_power1', tree: 'combat', label: 'Pukulan Keras', description: '+10% serangan', cost: 1, levelRequired: 2,
+    bonus: { attackPercent: 10 }
+  },
+  {
+    id: 'c_power2', tree: 'combat', label: 'Pukulan Brutal', description: '+15% serangan', cost: 2, levelRequired: 5, prerequisite: 'c_power1',
+    bonus: { attackPercent: 15 }
+  },
+  {
+    id: 'c_crit', tree: 'combat', label: 'Titik Vital', description: '+8% critical hit', cost: 2, levelRequired: 4,
+    bonus: { critChance: 8 }
+  },
+  {
+    id: 'c_tank', tree: 'combat', label: 'Badan Baja', description: '+10% pertahanan', cost: 1, levelRequired: 3,
+    bonus: { defensePercent: 10 }
+  },
+  {
+    id: 'c_hp', tree: 'combat', label: 'Vitalitas', description: '+25 max HP', cost: 2, levelRequired: 6, prerequisite: 'c_tank',
+    bonus: { maxHpBonus: 25 }
+  },
+
+  // Stealth Tree
+  {
+    id: 's_luck1', tree: 'stealth', label: 'Mata Tajam', description: '+10% peluang loot berguna', cost: 1, levelRequired: 2,
+    bonus: { scavengeLuck: 10 }
+  },
+  {
+    id: 's_luck2', tree: 'stealth', label: 'Insting Pemulung', description: '+15% peluang loot berguna', cost: 2, levelRequired: 5, prerequisite: 's_luck1',
+    bonus: { scavengeLuck: 15 }
+  },
+  {
+    id: 's_dodge', tree: 'stealth', label: 'Refleks Cepat', description: '+10% peluang mengelak', cost: 2, levelRequired: 4,
+    bonus: { dodgeChance: 10 }
+  },
+  {
+    id: 's_steal', tree: 'stealth', label: 'Tangan Panjang', description: '+20% uang dari combat', cost: 1, levelRequired: 3,
+    bonus: { stealBonus: 20 }
+  },
+  {
+    id: 's_xp', tree: 'stealth', label: 'Cepat Belajar', description: '+10% XP semua aksi', cost: 2, levelRequired: 7, prerequisite: 's_dodge',
+    bonus: { xpBonus: 10 }
+  },
+
+  // Trading Tree
+  {
+    id: 't_discount', tree: 'trading', label: 'Negosiator', description: '-10% harga toko', cost: 1, levelRequired: 2,
+    bonus: { shopDiscount: 10 }
+  },
+  {
+    id: 't_discount2', tree: 'trading', label: 'Tawar Menawar', description: '-15% harga toko', cost: 2, levelRequired: 6, prerequisite: 't_discount',
+    bonus: { shopDiscount: 15 }
+  },
+  {
+    id: 't_sell', tree: 'trading', label: 'Salesmanship', description: '+15% harga jual', cost: 1, levelRequired: 3,
+    bonus: { sellBonus: 15 }
+  },
+  {
+    id: 't_job', tree: 'trading', label: 'Koneksi Bisnis', description: '+15% gaji kerja', cost: 2, levelRequired: 5,
+    bonus: { jobPayBonus: 15 }
+  },
+  {
+    id: 't_xp', tree: 'trading', label: 'Pengalaman Dagang', description: '+8% XP semua aksi', cost: 2, levelRequired: 7, prerequisite: 't_job',
+    bonus: { xpBonus: 8 }
+  },
+]
+
+export const SKILL_POINTS_PER_LEVEL = 1 // 1 point per level up
+
+export function getSkillBonuses(unlockedSkillIds: string[]): SkillDef['bonus'] {
+  const combined: SkillDef['bonus'] = {}
+  for (const sid of unlockedSkillIds) {
+    const skill = SKILLS.find(s => s.id === sid)
+    if (!skill) continue
+    for (const [key, val] of Object.entries(skill.bonus)) {
+      ; (combined as any)[key] = ((combined as any)[key] ?? 0) + (val as number)
+    }
+  }
+  return combined
+}
+
+// ─── EQUIPMENT ───────────────────────────────────────────────────
+
+export type EquipmentSlot = 'weapon' | 'armor' | 'accessory'
+
+export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['weapon', 'armor', 'accessory']
+
+export interface CombatBonus {
+  attack?: number
+  defense?: number
+  speed?: number
+  dexterity?: number
+  maxHp?: number
+}
+
+// ─── MINI-GAMES ──────────────────────────────────────────────────
+
+export interface MiniGameDef {
+  id: string
+  label: string
+  description: string
+  icon: string
+  minBet: number
+  maxBet: number
+  nerveCost: number
+  locationId?: LocationId
+}
+
+export const MINI_GAMES: MiniGameDef[] = [
+  { id: 'coin_flip', label: 'Lempar Koin', description: 'Tebak sisi koin. Menang = 2x taruhan.', icon: 'Coins', minBet: 50, maxBet: 5000, nerveCost: 1 },
+  { id: 'number_guess', label: 'Tebak Angka', description: 'Tebak angka 1-10. Tepat = 8x taruhan.', icon: 'Dices', minBet: 50, maxBet: 2000, nerveCost: 2 },
+  { id: 'lockpick', label: 'Bongkar Kunci', description: 'Pilih pin yang benar. Berhasil = item + uang.', icon: 'KeyRound', minBet: 100, maxBet: 3000, nerveCost: 3, locationId: 'dark_alley' },
+]
+
+// ─── REPUTATION ──────────────────────────────────────────────────
+
+export interface ReputationLevel {
+  level: number
+  label: string
+  minRep: number
+  color: string
+  bonus: {
+    shopDiscount?: number   // % discount
+    xpMultiplier?: number   // e.g. 1.05 = +5%
+    scavengeBonus?: number  // +% useful loot
+  }
+}
+
+export const REPUTATION_LEVELS: ReputationLevel[] = [
+  { level: 0, label: 'Orang Asing', minRep: 0, color: 'text-muted-foreground', bonus: {} },
+  { level: 1, label: 'Dikenal', minRep: 100, color: 'text-green-500', bonus: { shopDiscount: 3, xpMultiplier: 1.02 } },
+  { level: 2, label: 'Dipercaya', minRep: 500, color: 'text-blue-500', bonus: { shopDiscount: 7, xpMultiplier: 1.05, scavengeBonus: 5 } },
+  { level: 3, label: 'Dihormati', minRep: 1500, color: 'text-purple-500', bonus: { shopDiscount: 12, xpMultiplier: 1.1, scavengeBonus: 10 } },
+  { level: 4, label: 'Legenda', minRep: 5000, color: 'text-yellow-500', bonus: { shopDiscount: 20, xpMultiplier: 1.15, scavengeBonus: 15 } },
+]
+
+export function getRepLevel(rep: number): ReputationLevel {
+  let result = REPUTATION_LEVELS[0]
+  for (const lvl of REPUTATION_LEVELS) {
+    if (rep >= lvl.minRep) result = lvl
+  }
+  return result
+}
+
+export const REP_GAINS: Record<string, number> = {
+  scavenge: 2,
+  combat_win: 5,
+  combat_lose: 1,
+  job_work: 3,
+  gym_train: 1,
+  shop_buy: 2,
+  craft: 3,
 }

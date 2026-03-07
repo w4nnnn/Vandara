@@ -4,8 +4,10 @@ import { db } from '@/lib/db'
 import { players, combatLogs, playerItems } from '@/lib/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { getPlayer } from './character'
-import { xpForLevel, ITEMS } from '@/lib/game/constants'
+import { xpForLevel, ITEMS, REP_GAINS, SKILL_POINTS_PER_LEVEL, type LocationId } from '@/lib/game/constants'
 import { getActiveNpcs } from '@/lib/game/npc-generator'
+import { trackQuestProgress } from './quests'
+import { addReputation } from './reputation'
 
 function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -177,6 +179,21 @@ export async function finishCombat(
         moneyEarned,
         xpEarned,
     })
+
+    // Quest & reputation tracking
+    if (won) {
+        await trackQuestProgress(player.id, 'combat_win', 'dark_alley')
+        await addReputation(player.id, 'dark_alley', REP_GAINS.combat_win)
+        // Award skill points on level up
+        if (leveledUp) {
+            const levelsGained = newLevel - player.level
+            await db.update(players).set({
+                skillPoints: sql`${players.skillPoints} + ${levelsGained * SKILL_POINTS_PER_LEVEL}`,
+            }).where(eq(players.id, player.id))
+        }
+    } else {
+        await addReputation(player.id, 'dark_alley', REP_GAINS.combat_lose)
+    }
 
     return {
         success: true as const,
