@@ -83,7 +83,7 @@ export async function buyShopItem(itemId: string, qty: number = 1) {
 
     return {
         success: true,
-        bought: itemDef.label,
+        bought: itemId,
         totalCost,
     }
 }

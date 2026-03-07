@@ -14,6 +14,7 @@ import {
   PackageIcon,
   SparklesIcon,
   HammerIcon,
+  WrenchIcon,
 } from 'lucide-react'
 
 type PlayerItem = {
@@ -30,6 +31,8 @@ const CATEGORY_ICON: Record<ItemCategory, React.ElementType> = {
   consumable: SparklesIcon,
   booster: PackageIcon,
   material: HammerIcon,
+  junk: BackpackIcon,
+  tool: WrenchIcon,
 }
 
 export default function InventoryContent({
@@ -51,7 +54,7 @@ export default function InventoryContent({
     startTransition(async () => {
       const res = await useItem(itemId)
       if (res.error) setMessage({ text: res.error, type: 'error' })
-      else setMessage({ text: t('inventory.used', { item: res.used ?? '' }), type: 'success' })
+      else setMessage({ text: t('inventory.used', { item: t(`item.${res.used}`) }), type: 'success' })
       router.refresh()
     })
   }

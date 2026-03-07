@@ -1,129 +1,342 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { players, playerItems } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { players, playerItems, scavengeLogs } from '@/lib/db/schema'
+import { eq, and, desc } from 'drizzle-orm'
 import { getPlayer } from './character'
-import type { LocationId } from '@/lib/game/constants'
+import {
+    type LocationId,
+    type ScavengeEventType,
+    SCAVENGE_ENERGY_COST,
+    SCAVENGE_XP_PER_ACTION,
+    SCAVENGE_LOOT_TABLES,
+    SCAVENGE_EVENTS,
+    DOUBLE_ENERGY_COST,
+    DOUBLE_SCAVENGE_LOOT_SHIFT,
+    scavengeXpForLevel,
+    ITEMS,
+    JUNK_IDS,
+    getStreakBonus,
+} from '@/lib/game/constants'
 
-// Cost to scavenge
-const SCAVENGE_ENERGY_COST = 5
-
-type LootResult = {
+export type LootResult = {
     itemId: string
     quantity: number
-    label: string
 } | {
     money: number
-    label: string
 }
 
-// Loot tables by location
-// Returns either money or an item
-function generateLoot(locationId: LocationId): LootResult {
-    const roll = Math.random()
+function rollEvent(streak: number): ScavengeEventType | null {
+    const { eventBonus } = getStreakBonus(streak)
+    for (const ev of SCAVENGE_EVENTS) {
+        if (Math.random() * 100 < ev.chance + eventBonus * 100) {
+            return ev.type
+        }
+    }
+    return null
+}
 
-    switch (locationId) {
-        case 'city_center':
-            // High chance to find small money
-            if (roll < 0.70) return { money: Math.floor(Math.random() * 20) + 5, label: 'Loose Change' }
-            // Small chance to find a basic energy drink
-            return { itemId: 'energy_drink', quantity: 1, label: 'Energy Drink' }
+function generateLoot(
+    locationId: LocationId,
+    scavengeLevel: number,
+    toolEffect: { nothingReduction?: number; materialBonus?: number; moneyBonus?: number; rareBonus?: number } | null,
+    streak: number,
+    doubleMode: boolean,
+): LootResult {
+    const table = SCAVENGE_LOOT_TABLES[locationId]
+    if (!table) return { money: 5 }
 
-        case 'gym_district':
-            // Medium chance to find protein shake
-            if (roll < 0.40) return { itemId: 'protein_shake', quantity: 1, label: 'Protein Shake' }
-            // Otherwise sweaty money
-            return { money: Math.floor(Math.random() * 15) + 5, label: 'Dropped Cash' }
+    const { lootBonus } = getStreakBonus(streak)
 
-        case 'business_district':
-            // High chance to find nothing or tiny money, but small chance for expensive item
-            if (roll < 0.10) return { itemId: 'expensive_watch', quantity: 1, label: 'Expensive Watch' }
-            if (roll < 0.30) return { itemId: 'briefcase', quantity: 1, label: 'Briefcase' }
-            return { money: Math.floor(Math.random() * 50) + 10, label: 'Wallet' }
+    // Calculate raw chances with level scaling
+    let rawChances = table.map(entry => {
+        const raw = Math.min(
+            entry.baseChance + entry.levelBonus * (scavengeLevel - 1),
+            entry.maxChance
+        )
+        return { entry, chance: Math.max(raw, 1) }
+    })
 
-        case 'dark_alley':
-            // Weapons/Scrap
-            if (roll < 0.30) return { itemId: 'scrap_metal', quantity: Math.floor(Math.random() * 3) + 1, label: 'Scrap Metal' }
-            if (roll < 0.40) return { itemId: 'rusty_shiv', quantity: 1, label: 'Rusty Shiv' }
-            return { money: Math.floor(Math.random() * 30) + 10, label: 'Stashed Cash' }
+    // Tool effect: reduce "nothing" chance
+    if (toolEffect?.nothingReduction) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'none') {
+                return { entry: r.entry, chance: r.chance * (1 - toolEffect.nothingReduction! / 100) }
+            }
+            return r
+        })
+    }
 
-        case 'hospital':
-            // Meds
-            if (roll < 0.40) return { itemId: 'bandages', quantity: 1, label: 'Bandages' }
-            if (roll < 0.10) return { itemId: 'medkit', quantity: 1, label: 'Medkit' }
-            return { money: Math.floor(Math.random() * 20) + 5, label: 'Lost Wallet' }
+    // Tool effect: boost material entries
+    if (toolEffect?.materialBonus) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'item' && r.entry.itemId !== 'junk') {
+                const def = ITEMS[r.entry.itemId!]
+                if (def?.category === 'material') {
+                    return { entry: r.entry, chance: r.chance * (1 + toolEffect.materialBonus! / 100) }
+                }
+            }
+            if (r.entry.type === 'money') {
+                return r // money bonus handled separately
+            }
+            return r
+        })
+    }
 
-        default:
-            return { money: 5, label: 'Coin' }
+    // Tool effect: boost rare items
+    if (toolEffect?.rareBonus) {
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'item' && r.entry.itemId !== 'junk') {
+                const def = ITEMS[r.entry.itemId!]
+                if (def && (def.rarity === 'rare' || def.rarity === 'epic')) {
+                    return { entry: r.entry, chance: r.chance * (1 + toolEffect.rareBonus! / 100) }
+                }
+            }
+            return r
+        })
+    }
+
+    // Streak bonus: shift junk/none chance to useful items
+    if (lootBonus > 0) {
+        let reduction = 0
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk')) {
+                const drop = r.chance * lootBonus
+                reduction += drop
+                return { entry: r.entry, chance: r.chance - drop }
+            }
+            return r
+        })
+        const growables = rawChances.filter(r => !(r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk')))
+        const growTotal = growables.reduce((sum, r) => sum + r.chance, 0)
+        if (growTotal > 0) {
+            rawChances = rawChances.map(r => {
+                if (!(r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk'))) {
+                    return { entry: r.entry, chance: r.chance + (r.chance / growTotal) * reduction }
+                }
+                return r
+            })
+        }
+    }
+
+    // Double mode: shift more junk/none to useful
+    if (doubleMode) {
+        let reduction = 0
+        rawChances = rawChances.map(r => {
+            if (r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk')) {
+                const drop = r.chance * DOUBLE_SCAVENGE_LOOT_SHIFT
+                reduction += drop
+                return { entry: r.entry, chance: r.chance - drop }
+            }
+            return r
+        })
+        const growables = rawChances.filter(r => !(r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk')))
+        const growTotal = growables.reduce((sum, r) => sum + r.chance, 0)
+        if (growTotal > 0) {
+            rawChances = rawChances.map(r => {
+                if (!(r.entry.type === 'none' || (r.entry.type === 'item' && r.entry.itemId === 'junk'))) {
+                    return { entry: r.entry, chance: r.chance + (r.chance / growTotal) * reduction }
+                }
+                return r
+            })
+        }
+    }
+
+    // Weighted random selection
+    const total = rawChances.reduce((sum, r) => sum + r.chance, 0)
+    let roll = Math.random() * total
+    let selected = rawChances[rawChances.length - 1].entry
+
+    for (const r of rawChances) {
+        roll -= r.chance
+        if (roll <= 0) {
+            selected = r.entry
+            break
+        }
+    }
+
+    // Resolve junk variants
+    if (selected.type === 'item' && selected.itemId === 'junk') {
+        const realId = JUNK_IDS[Math.floor(Math.random() * JUNK_IDS.length)]
+        return { itemId: realId, quantity: 1 }
+    } else if (selected.type === 'money') {
+        const min = selected.moneyMin ?? 5
+        const max = selected.moneyMax ?? 25
+        let bonus = 1 + (scavengeLevel - 1) * 0.1
+        if (toolEffect?.moneyBonus) bonus *= toolEffect.moneyBonus
+        const amount = Math.floor((Math.floor(Math.random() * (max - min + 1)) + min) * bonus)
+        return { money: amount }
+    } else if (selected.type === 'none') {
+        return { money: 0 }
+    } else {
+        const qMin = selected.quantityMin ?? 1
+        const qMax = selected.quantityMax ?? 1
+        const quantity = Math.floor(Math.random() * (qMax - qMin + 1)) + qMin
+        return { itemId: selected.itemId!, quantity }
     }
 }
 
-export async function scavenge() {
+async function giveItem(playerId: number, itemId: string, quantity: number) {
+    const existing = await db.query.playerItems.findFirst({
+        where: and(eq(playerItems.playerId, playerId), eq(playerItems.itemId, itemId))
+    })
+    if (existing) {
+        await db.update(playerItems).set({ quantity: existing.quantity + quantity }).where(eq(playerItems.id, existing.id))
+    } else {
+        await db.insert(playerItems).values({ playerId, itemId, quantity })
+    }
+}
+
+export async function scavenge(doubleMode = false) {
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
 
-    if (player.isHospitalized) {
-        return { error: 'You cannot scavenge while hospitalized.' }
+    if (player.isHospitalized) return { error: 'You cannot scavenge while hospitalized.' }
+    if (player.travelingTo) return { error: 'You are traveling.' }
+
+    const energyCost = doubleMode ? DOUBLE_ENERGY_COST : SCAVENGE_ENERGY_COST
+    if (player.energy < energyCost) return { error: `Not enough energy. Need ${energyCost}` }
+
+    const locationId = player.currentLocation as LocationId
+    const currentLevel = player.scavengeLevel
+
+    // Resolve equipped tool effects
+    const toolDef = player.equippedTool ? ITEMS[player.equippedTool] : null
+    const toolEffect = toolDef?.toolEffect ?? null
+
+    // Calculate streak
+    const sameLocation = player.scavengeStreakLocation === locationId
+    const newStreak = sameLocation ? (player.scavengeStreak ?? 0) + 1 : 1
+
+    // Roll for random event
+    const event = rollEvent(newStreak)
+
+    // Generate base loot
+    let loot = generateLoot(locationId, currentLevel, toolEffect, newStreak, doubleMode)
+
+    // Apply event effects
+    let eventData: { type: ScavengeEventType; detail?: string } | null = null
+    let healthLost = 0
+    let energyLost = 0
+
+    if (event) {
+        switch (event) {
+            case 'crit':
+                // Double the loot
+                if ('money' in loot) {
+                    loot = { money: loot.money * 2 }
+                } else {
+                    loot = { itemId: loot.itemId, quantity: loot.quantity * 2 }
+                }
+                eventData = { type: 'crit' }
+                break
+            case 'treasure_chest':
+                // Replace with a better item or bonus money
+                loot = { money: Math.floor(50 + Math.random() * 100 * (1 + (currentLevel - 1) * 0.15)) }
+                eventData = { type: 'treasure_chest' }
+                break
+            case 'danger':
+                // Lose some HP
+                healthLost = Math.floor(10 + Math.random() * 15)
+                energyLost = Math.floor(3 + Math.random() * 5)
+                eventData = { type: 'danger' }
+                break
+            case 'npc_trade':
+                // NPC offers to trade junk for money
+                loot = { money: Math.floor(30 + Math.random() * 70) }
+                eventData = { type: 'npc_trade' }
+                break
+        }
     }
 
-    if (player.travelingTo) {
-        return { error: 'You are traveling.' }
-    }
+    // Calculate XP gain
+    const xpGain = doubleMode ? SCAVENGE_XP_PER_ACTION * 2 : SCAVENGE_XP_PER_ACTION
+    const newXp = player.scavengeXp + xpGain
+    const xpNeeded = scavengeXpForLevel(currentLevel + 1)
+    const leveledUp = newXp >= xpNeeded
+    const newLevel = leveledUp ? currentLevel + 1 : currentLevel
 
-    if (player.energy < SCAVENGE_ENERGY_COST) {
-        return { error: `Not enough energy. Need ${SCAVENGE_ENERGY_COST}` }
-    }
-
-    const loot = generateLoot(player.currentLocation as LocationId)
-
-    // Deduct energy
-    let updatedEnergy = player.energy - SCAVENGE_ENERGY_COST
+    // Deduct energy & update stats
+    const updatedEnergy = Math.max(0, player.energy - energyCost - energyLost)
+    const updatedHealth = Math.max(1, player.health - healthLost)
     let updatedMoney = player.money
 
     if ('money' in loot) {
         updatedMoney += loot.money
-        await db
-            .update(players)
-            .set({
-                energy: updatedEnergy,
-                money: updatedMoney,
-                updatedAt: new Date(),
-            })
-            .where(eq(players.id, player.id))
-    } else {
-        // Update energy
-        await db
-            .update(players)
-            .set({
-                energy: updatedEnergy,
-                updatedAt: new Date(),
-            })
-            .where(eq(players.id, player.id))
-
-        // Give item
-        const existingItem = await db.query.playerItems.findFirst({
-            where: and(
-                eq(playerItems.playerId, player.id),
-                eq(playerItems.itemId, loot.itemId)
-            )
-        })
-
-        if (existingItem) {
-            await db
-                .update(playerItems)
-                .set({ quantity: existingItem.quantity + loot.quantity })
-                .where(eq(playerItems.id, existingItem.id))
-        } else {
-            await db
-                .insert(playerItems)
-                .values({
-                    playerId: player.id,
-                    itemId: loot.itemId,
-                    quantity: loot.quantity,
-                })
-        }
     }
 
-    return { success: true, loot }
+    await db
+        .update(players)
+        .set({
+            energy: updatedEnergy,
+            health: updatedHealth,
+            money: updatedMoney,
+            scavengeXp: newXp,
+            scavengeLevel: newLevel,
+            scavengeStreak: newStreak,
+            scavengeStreakLocation: locationId,
+            updatedAt: new Date(),
+        })
+        .where(eq(players.id, player.id))
+
+    // Give item if applicable
+    if (!('money' in loot)) {
+        await giveItem(player.id, loot.itemId, loot.quantity)
+    }
+
+    // Log scavenge action
+    await db.insert(scavengeLogs).values({
+        playerId: player.id,
+        locationId,
+        resultType: 'money' in loot ? (loot.money === 0 ? 'none' : 'money') : 'item',
+        itemId: 'itemId' in loot ? loot.itemId : null,
+        quantity: 'quantity' in loot ? loot.quantity : null,
+        moneyAmount: 'money' in loot ? loot.money : null,
+        eventType: eventData?.type ?? null,
+        streak: newStreak,
+        doubleMode,
+    })
+
+    return {
+        success: true,
+        loot,
+        event: eventData,
+        streak: newStreak,
+        healthLost,
+        energyLost,
+        xpGained: xpGain,
+        leveledUp,
+        newLevel,
+        newXp,
+        xpNeeded: leveledUp ? scavengeXpForLevel(newLevel + 1) : xpNeeded,
+    }
+}
+
+export async function equipTool(toolId: string | null) {
+    const player = await getPlayer()
+    if (!player) return { error: 'Not logged in' }
+
+    if (toolId) {
+        const def = ITEMS[toolId]
+        if (!def || def.category !== 'tool') return { error: 'Invalid tool' }
+        // Check player owns it
+        const owned = await db.query.playerItems.findFirst({
+            where: and(eq(playerItems.playerId, player.id), eq(playerItems.itemId, toolId))
+        })
+        if (!owned || owned.quantity < 1) return { error: 'You don\'t own this tool' }
+    }
+
+    await db.update(players).set({ equippedTool: toolId, updatedAt: new Date() }).where(eq(players.id, player.id))
+    return { success: true, equippedTool: toolId }
+}
+
+export async function getScavengeLogs() {
+    const player = await getPlayer()
+    if (!player) return []
+
+    return db.query.scavengeLogs.findMany({
+        where: eq(scavengeLogs.playerId, player.id),
+        orderBy: [desc(scavengeLogs.createdAt)],
+        limit: 15,
+    })
 }

@@ -93,7 +93,7 @@ export async function finishCombat(
     let xpEarned = 0
     let leveledUp = false
     let newLevel = player.level
-    const itemsDropped: { itemId: string; label: string }[] = []
+    const itemsDropped: { itemId: string }[] = []
     let hospitalized = false
     let hospitalSeconds = 0
 
@@ -113,7 +113,7 @@ export async function finishCombat(
                 if (Math.random() < drop.chance) {
                     const itemDef = ITEMS[drop.itemId]
                     if (itemDef) {
-                        itemsDropped.push({ itemId: drop.itemId, label: itemDef.label })
+                        itemsDropped.push({ itemId: drop.itemId })
                         const existing = await db.query.playerItems.findFirst({
                             where: and(
                                 eq(playerItems.playerId, player.id),

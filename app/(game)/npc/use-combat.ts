@@ -31,7 +31,7 @@ export type CombatResultData = {
     xpEarned: number
     leveledUp: boolean
     newLevel: number
-    itemsDropped: { itemId: string; label: string }[]
+    itemsDropped: { itemId: string }[]
     hospitalized: boolean
     hospitalSeconds: number
 }

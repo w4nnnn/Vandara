@@ -589,7 +589,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                             {result.itemsDropped.map((item, i) => (
                                                 <Badge key={i} variant="outline" className="gap-1">
                                                     <PackageIcon className="size-3" />
-                                                    {item.label}
+                                                    {t(`item.${item.itemId}`)}
                                                 </Badge>
                                             ))}
                                         </div>

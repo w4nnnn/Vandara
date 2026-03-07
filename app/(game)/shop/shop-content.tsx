@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingCartIcon, CoinsIcon, StoreIcon, SkullIcon, SparklesIcon, PackageIcon, HammerIcon } from 'lucide-react'
+import { ShoppingCartIcon, CoinsIcon, StoreIcon, SkullIcon, SparklesIcon, PackageIcon, HammerIcon, BackpackIcon, WrenchIcon } from 'lucide-react'
 import { buyShopItem, SHOP_INVENTORY } from '@/app/actions/shop'
 import { ITEMS, LOCATIONS, type LocationId, type ItemCategory } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
@@ -21,6 +21,8 @@ const CATEGORY_ICON: Record<ItemCategory, React.ElementType> = {
     consumable: SparklesIcon,
     booster: PackageIcon,
     material: HammerIcon,
+    junk: BackpackIcon,
+    tool: WrenchIcon,
 }
 
 export default function ShopContent({ player }: { player: Player }) {
@@ -37,7 +39,7 @@ export default function ShopContent({ player }: { player: Player }) {
         startTransition(async () => {
             const res = await buyShopItem(itemId, 1)
             if (res.error) setMessage({ text: res.error, type: 'error' })
-            else setMessage({ text: t('shop.bought', { item: res.bought ?? '', cost: String(res.totalCost ?? 0) }), type: 'success' })
+            else setMessage({ text: t('shop.bought', { item: t(`item.${res.bought}`), cost: String(res.totalCost ?? 0) }), type: 'success' })
             router.refresh()
         })
     }

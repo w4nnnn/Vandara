@@ -66,7 +66,7 @@ export async function useItem(itemId: string) {
 
   return {
     success: true,
-    used: itemDef.label,
+    used: itemId,
     effect: itemDef.effect,
   }
 }

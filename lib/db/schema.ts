@@ -25,6 +25,11 @@ export const players = pgTable('players', {
   travelingTo: varchar('traveling_to', { length: 50 }),
   travelingUntil: timestamp('traveling_until'),
   lastEncounterMsg: varchar('last_encounter_msg', { length: 255 }),
+  scavengeLevel: integer('scavenge_level').notNull().default(1),
+  scavengeXp: integer('scavenge_xp').notNull().default(0),
+  scavengeStreak: integer('scavenge_streak').notNull().default(0),
+  scavengeStreakLocation: varchar('scavenge_streak_location', { length: 50 }),
+  equippedTool: varchar('equipped_tool', { length: 50 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -96,6 +101,23 @@ export const combatLogs = pgTable('combat_logs', {
   damageTaken: integer('damage_taken').notNull(),
   moneyEarned: integer('money_earned').notNull().default(0),
   xpEarned: integer('xp_earned').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Scavenge logs
+export const scavengeLogs = pgTable('scavenge_logs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  locationId: varchar('location_id', { length: 50 }).notNull(),
+  resultType: varchar('result_type', { length: 20 }).notNull(), // 'item' | 'money' | 'none'
+  itemId: varchar('item_id', { length: 50 }),
+  quantity: integer('quantity'),
+  moneyAmount: integer('money_amount'),
+  eventType: varchar('event_type', { length: 30 }),
+  streak: integer('streak').notNull().default(0),
+  doubleMode: boolean('double_mode').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
