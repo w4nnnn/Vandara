@@ -70,19 +70,19 @@ const NAV_ITEMS = [
     label: 'Gym',
     href: '/gym',
     icon: DumbbellIcon,
-    enabled: false,
+    enabled: true,
   },
   {
     label: 'Inventory',
     href: '/inventory',
     icon: BackpackIcon,
-    enabled: false,
+    enabled: true,
   },
   {
     label: 'Jobs',
     href: '/jobs',
     icon: BriefcaseIcon,
-    enabled: false,
+    enabled: true,
   },
   {
     label: 'Travel',

@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, integer, bigint, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, serial, varchar, integer, bigint, timestamp, boolean } from 'drizzle-orm/pg-core'
 
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
@@ -18,6 +18,7 @@ export const players = pgTable('players', {
   defense: integer('defense').notNull().default(1),
   speed: integer('speed').notNull().default(1),
   dexterity: integer('dexterity').notNull().default(1),
+  jobId: varchar('job_id', { length: 50 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -41,4 +42,38 @@ export const playerAvatars = pgTable('player_avatars', {
   eyebrowType: varchar('eyebrow_type', { length: 50 }).notNull().default('Default'),
   mouthType: varchar('mouth_type', { length: 50 }).notNull().default('Default'),
   skinColor: varchar('skin_color', { length: 50 }).notNull().default('Light'),
+})
+
+// Inventory items
+export const playerItems = pgTable('player_items', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  itemId: varchar('item_id', { length: 50 }).notNull(),
+  quantity: integer('quantity').notNull().default(1),
+})
+
+// Gym training log
+export const gymLogs = pgTable('gym_logs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  stat: varchar('stat', { length: 20 }).notNull(),
+  gained: integer('gained').notNull(),
+  energySpent: integer('energy_spent').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Job work log
+export const jobLogs = pgTable('job_logs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  jobId: varchar('job_id', { length: 50 }).notNull(),
+  moneyEarned: integer('money_earned').notNull(),
+  xpEarned: integer('xp_earned').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })
