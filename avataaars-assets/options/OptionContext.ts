@@ -62,6 +62,16 @@ export default class OptionContext {
     })
   }
 
+  optionEnterSilent (key: string) {
+    const optionState = this.getOptionState(key)!
+    this.setStateSilent({
+      [key]: {
+        ...optionState,
+        available: optionState.available + 1
+      }
+    })
+  }
+
   optionExit (key: string) {
     const optionState = this.getOptionState(key)!
     this.setState({
@@ -100,9 +110,24 @@ export default class OptionContext {
     this.notifyListener()
   }
 
+  // set data without triggering listeners (safe during render)
+  setDataSilent (data: { [index: string]: string }) {
+    this._data = data
+  }
+
   setDefaultValue (key: string, defaultValue: string) {
     const optionState = this.getOptionState(key)!
     this.setState({
+      [key]: {
+        ...optionState,
+        defaultValue
+      }
+    })
+  }
+
+  setDefaultValueSilent (key: string, defaultValue: string) {
+    const optionState = this.getOptionState(key)!
+    this.setStateSilent({
       [key]: {
         ...optionState,
         defaultValue
@@ -120,12 +145,29 @@ export default class OptionContext {
     })
   }
 
+  setOptionsSilent (key: string, options: Array<string>) {
+    this.setStateSilent({
+      [key]: {
+        ...this.state[key],
+        key,
+        options
+      }
+    })
+  }
+
   private setState (state: OptionContextState) {
     this._state = {
       ...this.state,
       ...state
     }
     this.notifyListener()
+  }
+
+  private setStateSilent (state: OptionContextState) {
+    this._state = {
+      ...this.state,
+      ...state
+    }
   }
 
   private notifyListener () {

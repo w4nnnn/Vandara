@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { uniqueId } from 'lodash'
 
 import Accessories from './top/accessories'
 import Clothe from './clothes'
 import Face from './face'
 import Skin from './Skin'
 import Top from './top'
+import { AvatarIdContext } from './AvatarIdContext'
 
 export enum AvatarStyle {
   Circle = 'Circle',
@@ -18,22 +18,21 @@ export interface Props {
   style?: React.CSSProperties
 }
 
-export default class Avatar extends React.Component<Props> {
-  private path1 = uniqueId('react-path-')
-  private path2 = uniqueId('react-path-')
-  private path3 = uniqueId('react-path-')
-  private mask1 = uniqueId('react-mask-')
-  private mask2 = uniqueId('react-mask-')
-  private mask3 = uniqueId('react-mask-')
+export default function Avatar({ avatarStyle, className, style }: Props) {
+  const reactId = React.useId()
+  const path1 = `path-1${reactId}`
+  const path2 = `path-2${reactId}`
+  const path3 = `path-3${reactId}`
+  const mask1 = `mask-1${reactId}`
+  const mask2 = `mask-2${reactId}`
+  const mask3 = `mask-3${reactId}`
 
-  render() {
-    const { path1, path2, path3, mask1, mask2, mask3 } = this
-    const { avatarStyle } = this.props
-    const circle = avatarStyle === AvatarStyle.Circle
-    return (
+  const circle = avatarStyle === AvatarStyle.Circle
+  return (
+    <AvatarIdContext.Provider value={reactId}>
       <svg
-        style={this.props.style}
-        className={this.props.className}
+        style={style}
+        className={className}
         width="264px"
         height="280px"
         viewBox="0 0 264 280"
@@ -119,6 +118,6 @@ export default class Avatar extends React.Component<Props> {
           </g>
         </g>
       </svg>
-    )
-  }
+    </AvatarIdContext.Provider>
+  )
 }

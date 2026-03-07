@@ -3,7 +3,7 @@ import { uniqueId } from 'lodash'
 
 import HatColor from './HatColor'
 
-export default class Hijab extends React.Component {
+export default class Hijab extends React.Component<{ children?: React.ReactNode }> {
   static optionValue = 'Hijab'
 
   private filter1 = uniqueId('react-filter-')

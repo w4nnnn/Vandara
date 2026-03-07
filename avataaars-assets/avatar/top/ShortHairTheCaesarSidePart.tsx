@@ -4,7 +4,7 @@ import { uniqueId } from 'lodash'
 import FacialHair from './facialHair'
 import HairColor from './HairColor'
 
-export default class ShortHairTheCaesarSidePart extends React.Component {
+export default class ShortHairTheCaesarSidePart extends React.Component<{ children?: React.ReactNode }> {
   static optionValue = 'ShortHairTheCaesarSidePart'
 
   private filter1 = uniqueId('react-filter-')

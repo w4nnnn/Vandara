@@ -1,8 +1,10 @@
-import * as PropTypes from 'prop-types'
+'use client'
+
 import * as React from 'react'
+import { useRef, useEffect, useReducer } from 'react'
 
 import Option from './Option'
-import OptionContext from './OptionContext'
+import { useOptionContext } from '../AvatarContext'
 
 function getComponentOptionValue (component: React.ComponentClass) {
   const optionValue = (component as any).optionValue
@@ -14,74 +16,59 @@ function getComponentOptionValue (component: React.ComponentClass) {
 
 export interface Props {
   option: Option
-  defaultOption: React.ComponentClass | string
+  defaultOption: React.ComponentClass<any> | string
+  children?: React.ReactNode
 }
 
-export default class Selector extends React.Component<Props> {
-  static contextTypes = {
-    optionContext: PropTypes.instanceOf(OptionContext)
-  }
+export default function Selector ({ option, defaultOption, children }: Props) {
+  const optionContext = useOptionContext()
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
+  const initializedRef = useRef(false)
 
-  private get optionContext (): OptionContext {
-    return this.context.optionContext
-  }
+  // Synchronous init on first render — registers options and defaults
+  // so getValue() works immediately. This is safe because listener
+  // registration happens in useEffect, so no "setState during render".
+  if (!initializedRef.current) {
+    initializedRef.current = true
+    const defaultValue =
+      typeof defaultOption === 'string'
+        ? defaultOption
+        : getComponentOptionValue(defaultOption)
 
-  UNSAFE_componentWillMount () {
-    const { option, defaultOption } = this.props
-    const { optionContext } = this
-    const defaultValue = (
-      typeof defaultOption === 'string' ?
-      defaultOption : getComponentOptionValue(defaultOption)
-    )
-    optionContext.addStateChangeListener(this.optionContextUpdate)
-    optionContext.optionEnter(option.key)
-    const optionState = optionContext.getOptionState(option.key)
-    this.updateOptionValues()
-    if (optionState) {
-      optionContext.setDefaultValue(option.key, defaultValue)
-    }
-  }
+    optionContext.optionEnterSilent(option.key)
 
-  UNSAFE_componentWillUpdate (nextProps: Props & { children?: React.ReactNode }) {
-    this.updateOptionValues(nextProps)
-  }
-
-  componentWillUnmount () {
-    this.optionContext.removeStateChangeListener(this.optionContextUpdate)
-    this.optionContext.optionExit(this.props.option.key)
-  }
-
-  render () {
-    let result: React.ReactNode | null = null
-    const { option, children } = this.props
-    const value = this.optionContext.getValue(option.key)!
-    React.Children.forEach(children, child => {
-      if (getComponentOptionValue((child as any).type) === value) {
-        result = child
-      }
-    })
-    return result
-  }
-
-  private optionContextUpdate = () => {
-    this.forceUpdate()
-  }
-
-  private updateOptionValues (
-    nextProps?: Props & { children?: React.ReactNode }
-  ) {
-    if (nextProps && this.props.children === nextProps.children) {
-      return
-    }
-    const { option, children } = this.props
     const values = React.Children.map(
       children,
-      // TODO: also validate and throw error if we don't see optionValue
       child => getComponentOptionValue((child as any).type)
     )
-    if (new Set(values).size !== values?.length) {
+    if (values && new Set(values).size !== values.length) {
       throw new Error('Duplicate values')
     }
-    this.optionContext.setOptions(option.key, values)
+    if (values) {
+      optionContext.setOptionsSilent(option.key, values)
+    }
+
+    const optionState = optionContext.getOptionState(option.key)
+    if (optionState) {
+      optionContext.setDefaultValueSilent(option.key, defaultValue)
+    }
   }
+
+  useEffect(() => {
+    optionContext.addStateChangeListener(forceUpdate)
+    return () => {
+      optionContext.removeStateChangeListener(forceUpdate)
+      optionContext.optionExit(option.key)
+    }
+  }, [optionContext, option.key])
+
+  const value = optionContext.getValue(option.key)!
+  let result: React.ReactNode | null = null
+  React.Children.forEach(children, child => {
+    if (getComponentOptionValue((child as any).type) === value) {
+      result = child
+    }
+  })
+
+  return <>{result}</>
 }

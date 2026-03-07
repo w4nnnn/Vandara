@@ -1,20 +1,23 @@
-import * as PropTypes from 'prop-types'
+'use client'
+
 import * as React from 'react'
 
 import Avatar, { AvatarStyle } from './avatar'
 import { OptionContext, allOptions } from './options'
+import { AvatarReactContext } from './AvatarContext'
 
 export { default as Avatar, AvatarStyle } from './avatar'
 export { Option, OptionContext, allOptions } from './options'
 
-import {default as PieceComponent} from './avatar/piece';
+import { default as PieceComponent } from './avatar/piece'
 
 export interface Props {
   avatarStyle: string
-  className?: string;
+  className?: string
   style?: React.CSSProperties
   topType?: string
   accessoriesType?: string
+  hatColor?: string
   hairColor?: string
   facialHairType?: string
   facialHairColor?: string
@@ -25,79 +28,87 @@ export interface Props {
   eyebrowType?: string
   mouthType?: string
   skinColor?: string
-  pieceType?:string
-  pieceSize?:string
-  viewBox?:string
+  pieceType?: string
+  pieceSize?: string
+  viewBox?: string
 }
 
-export default class AvatarComponent extends React.Component<Props> {
-  static childContextTypes = {
-    optionContext: PropTypes.instanceOf(OptionContext)
+function buildAvatarData(props: Props) {
+  const data: { [index: string]: string } = {}
+  for (const option of allOptions) {
+    const value = (props as any)[option.key]
+    if (!value) continue
+    data[option.key] = value
   }
-  private optionContext: OptionContext = new OptionContext(allOptions)
-
-  getChildContext () {
-    return { optionContext: this.optionContext }
-  }
-
-  UNSAFE_componentWillMount () {
-    this.updateOptionContext(this.props)
-  }
-
-  UNSAFE_componentWillReceiveProps (nextProps: Props) {
-    this.updateOptionContext(nextProps)
-  }
-
-  render () {
-    const { avatarStyle, style, className } = this.props
-    return <Avatar avatarStyle={avatarStyle as AvatarStyle} style={style} className={className} />
-  }
-
-  private updateOptionContext (props: Props) {
-    const data: { [index: string]: string } = {}
-    for (const option of allOptions) {
-      const value = props[option.key]
-      if (!value) {
-        continue
-      }
-      data[option.key] = value
-    }
-    this.optionContext.setData(data)
-  }
+  return data
 }
 
-export class Piece extends React.Component<Props> {
-  static childContextTypes = {
-    optionContext: PropTypes.instanceOf(OptionContext)
-  }
-  private optionContext: OptionContext = new OptionContext(allOptions)
+export default function AvatarComponent(props: Props) {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
 
-  getChildContext () {
-    return { optionContext: this.optionContext }
+  const optionContextRef = React.useRef<OptionContext | null>(null)
+  if (!optionContextRef.current) {
+    optionContextRef.current = new OptionContext(allOptions)
+  }
+  const optionContext = optionContextRef.current
+
+  // Set data silently during render (no listener notifications)
+  const data = buildAvatarData(props)
+  optionContext.setDataSilent(data)
+
+  // Notify listeners after render (for prop changes)
+  React.useEffect(() => {
+    optionContext.setData(data)
+  })
+
+  if (!mounted) {
+    return <div style={props.style} className={props.className} />
   }
 
-  UNSAFE_componentWillMount () {
-    this.updateOptionContext(this.props)
+  const { avatarStyle, style, className } = props
+  return (
+    <AvatarReactContext.Provider value={optionContext}>
+      <Avatar
+        avatarStyle={avatarStyle as AvatarStyle}
+        style={style}
+        className={className}
+      />
+    </AvatarReactContext.Provider>
+  )
+}
+
+export function Piece(props: Props) {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
+
+  const optionContextRef = React.useRef<OptionContext | null>(null)
+  if (!optionContextRef.current) {
+    optionContextRef.current = new OptionContext(allOptions)
+  }
+  const optionContext = optionContextRef.current
+
+  const data = buildAvatarData(props)
+  optionContext.setDataSilent(data)
+
+  React.useEffect(() => {
+    optionContext.setData(data)
+  })
+
+  if (!mounted) {
+    return <div style={props.style} />
   }
 
-  UNSAFE_componentWillReceiveProps (nextProps: Props) {
-    this.updateOptionContext(nextProps)
-  }
-
-  render () {
-    const { avatarStyle, style, pieceType, pieceSize, viewBox } = this.props
-    return <PieceComponent avatarStyle={avatarStyle as AvatarStyle} style={style} pieceType={pieceType} pieceSize={pieceSize} viewBox={viewBox}/>
-  }
-
-  private updateOptionContext (props: Props) {
-    const data: { [index: string]: string } = {}
-    for (const option of allOptions) {
-      const value = props[option.key]
-      if (!value) {
-        continue
-      }
-      data[option.key] = value
-    }
-    this.optionContext.setData(data)
-  }
+  const { avatarStyle, style, pieceType, pieceSize, viewBox } = props
+  return (
+    <AvatarReactContext.Provider value={optionContext}>
+      <PieceComponent
+        avatarStyle={avatarStyle as AvatarStyle}
+        style={style}
+        pieceType={pieceType}
+        pieceSize={pieceSize}
+        viewBox={viewBox}
+      />
+    </AvatarReactContext.Provider>
+  )
 }

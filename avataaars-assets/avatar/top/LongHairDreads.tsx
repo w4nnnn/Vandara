@@ -4,7 +4,7 @@ import { uniqueId } from 'lodash'
 import FacialHair from './facialHair'
 import HairColor from './HairColor'
 
-export default class LongHairDreads extends React.Component {
+export default class LongHairDreads extends React.Component<{ children?: React.ReactNode }> {
   static optionValue = 'LongHairDreads'
   private mask1 = uniqueId('react-mask-')
   private mask2 = uniqueId('react-mask-')
