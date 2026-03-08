@@ -246,7 +246,7 @@ async function giveItem(playerId: number, itemId: string, quantity: number) {
     }
 }
 
-export async function scavenge(spotId: string | null = null, doubleMode = false) {
+export async function scavenge(spotId: string | null = null, doubleMode = false, miniGameWon = false) {
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
 
@@ -332,7 +332,13 @@ export async function scavenge(spotId: string | null = null, doubleMode = false)
     let updatedMoney = player.money
 
     if ('money' in loot) {
-        updatedMoney += loot.money
+        // Apply mini-game bonus (+50% money)
+        const moneyBonus = miniGameWon ? Math.floor(loot.money * 0.5) : 0
+        updatedMoney += loot.money + moneyBonus
+        if (moneyBonus > 0) (loot as any).money += moneyBonus
+    } else if (miniGameWon && 'quantity' in loot) {
+        // Mini-game bonus: +1 item quantity
+        loot.quantity += 1
     }
 
     await db
@@ -384,6 +390,7 @@ export async function scavenge(spotId: string | null = null, doubleMode = false)
         newXp,
         xpNeeded: leveledUp ? scavengeXpForLevel(newLevel + 1) : xpNeeded,
         spotLabel: selectedSpot?.label ?? null,
+        miniGameWon,
     }
 }
 

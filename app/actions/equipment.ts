@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { players, playerItems } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getPlayer } from './character'
-import { ITEMS, type EquipmentSlot, EQUIPMENT_SLOTS, type CombatBonus } from '@/lib/game/constants'
+import { ITEMS, type EquipmentSlot } from '@/lib/game/constants'
 
 export async function equipItem(itemId: string) {
     const player = await getPlayer()
@@ -42,23 +42,4 @@ export async function unequipItem(slot: EquipmentSlot) {
 
     await db.update(players).set(updateData).where(eq(players.id, player.id))
     return { success: true, slot }
-}
-
-export function getEquipmentBonuses(player: {
-    equippedWeapon?: string | null
-    equippedArmor?: string | null
-    equippedAccessory?: string | null
-}): CombatBonus {
-    const combined: CombatBonus = {}
-    const slots = [player.equippedWeapon, player.equippedArmor, player.equippedAccessory]
-
-    for (const itemId of slots) {
-        if (!itemId) continue
-        const def = ITEMS[itemId]
-        if (!def?.combatBonus) continue
-        for (const [key, val] of Object.entries(def.combatBonus)) {
-            ; (combined as any)[key] = ((combined as any)[key] ?? 0) + (val as number)
-        }
-    }
-    return combined
 }

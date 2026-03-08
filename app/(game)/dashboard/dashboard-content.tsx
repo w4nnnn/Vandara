@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import AvatarComponent from '@/avataaars-assets'
+import AvatarComponent from '@/lib/avataaars'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { xpForLevel } from '@/lib/game/constants'

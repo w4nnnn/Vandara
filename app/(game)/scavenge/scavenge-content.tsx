@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     SearchIcon, MapPinIcon, ZapIcon, ArchiveIcon, StarIcon, TrendingUpIcon,
     FlameIcon, WrenchIcon, RecycleIcon, ScrollTextIcon, ShieldAlertIcon,
-    SparklesIcon, UserIcon, ChevronRightIcon,
+    SparklesIcon, UserIcon, ChevronRightIcon, PackageIcon, ArrowLeftIcon, ArrowRightIcon, MousePointerClickIcon,
 } from 'lucide-react'
 import { scavenge, equipTool } from '@/app/actions/scavenge'
 import { recycle } from '@/app/actions/recycle'
@@ -124,16 +124,98 @@ export default function ScavengeContent({
     const [doubleMode, setDoubleMode] = useState(false)
     const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null)
 
+    // ─── Mini-Game State ──────────────────────────────────
+    type MiniGameType = 'pick_trash' | 'guess_direction' | 'quick_tap'
+    const [miniGameOpen, setMiniGameOpen] = useState(false)
+    const [miniGameType, setMiniGameType] = useState<MiniGameType>('pick_trash')
+    const [miniGameResult, setMiniGameResult] = useState<'playing' | 'won' | 'lost'>('playing')
+    const [miniGameData, setMiniGameData] = useState<any>({})
+    const tapCountRef = useRef(0)
+    const tapTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+    const startMiniGame = () => {
+        const types: MiniGameType[] = ['pick_trash', 'guess_direction', 'quick_tap']
+        const type = types[Math.floor(Math.random() * types.length)]
+        setMiniGameType(type)
+        setMiniGameResult('playing')
+        tapCountRef.current = 0
+
+        if (type === 'pick_trash') {
+            const correct = Math.floor(Math.random() * 3)
+            setMiniGameData({ correct, revealed: false })
+        } else if (type === 'guess_direction') {
+            const correct = Math.random() < 0.5 ? 'left' : 'right'
+            setMiniGameData({ correct, chosen: null })
+        } else {
+            setMiniGameData({ taps: 0, target: 10, timeLeft: 3, active: true })
+        }
+
+        setMiniGameOpen(true)
+    }
+
+    const finishMiniGame = useCallback((won: boolean) => {
+        setMiniGameResult(won ? 'won' : 'lost')
+        if (tapTimerRef.current) clearInterval(tapTimerRef.current)
+        // After 1s delay, proceed with scavenge
+        setTimeout(() => {
+            setMiniGameOpen(false)
+            setLoadingOpen(true)
+            startTransition(async () => {
+                const res = await scavenge(selectedSpotId, doubleMode, won)
+                setResult(res)
+                setLoadingOpen(false)
+                setResultOpen(true)
+                router.refresh()
+            })
+        }, 1200)
+    }, [selectedSpotId, doubleMode, router])
+
+    // Pick Trash handler
+    const handlePickTrash = (idx: number) => {
+        if (miniGameData.revealed) return
+        const won = idx === miniGameData.correct
+        setMiniGameData({ ...miniGameData, revealed: true, picked: idx })
+        finishMiniGame(won)
+    }
+
+    // Guess Direction handler  
+    const handleGuessDirection = (dir: 'left' | 'right') => {
+        if (miniGameData.chosen) return
+        const won = dir === miniGameData.correct
+        setMiniGameData({ ...miniGameData, chosen: dir })
+        finishMiniGame(won)
+    }
+
+    // Quick Tap handler
+    const handleQuickTap = useCallback(() => {
+        if (miniGameResult !== 'playing') return
+        tapCountRef.current += 1
+        const newTaps = tapCountRef.current
+        setMiniGameData((prev: any) => ({ ...prev, taps: newTaps }))
+        if (newTaps >= 10) {
+            finishMiniGame(true)
+        }
+    }, [miniGameResult, finishMiniGame])
+
+    // Quick Tap timer
+    useEffect(() => {
+        if (miniGameType !== 'quick_tap' || !miniGameOpen || miniGameResult !== 'playing') return
+        tapTimerRef.current = setInterval(() => {
+            setMiniGameData((prev: any) => {
+                const newTime = prev.timeLeft - 0.1
+                if (newTime <= 0) {
+                    finishMiniGame(false)
+                    return { ...prev, timeLeft: 0, active: false }
+                }
+                return { ...prev, timeLeft: Math.round(newTime * 10) / 10 }
+            })
+        }, 100)
+        return () => { if (tapTimerRef.current) clearInterval(tapTimerRef.current) }
+    }, [miniGameType, miniGameOpen, miniGameResult, finishMiniGame])
+
     const handleScavenge = () => {
         setResult(null)
-        setLoadingOpen(true)
-        startTransition(async () => {
-            const res = await scavenge(selectedSpotId, doubleMode)
-            setResult(res)
-            setLoadingOpen(false)
-            setResultOpen(true)
-            router.refresh()
-        })
+        startMiniGame()
     }
 
     const handleEquipTool = (toolId: string | null) => {
@@ -259,6 +341,114 @@ export default function ScavengeContent({
                     </AlertDescription>
                 </Alert>
             )}
+
+            {/* ── Mini-Game Dialog ── */}
+            <Dialog open={miniGameOpen} onOpenChange={setMiniGameOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-center">
+                            {miniGameType === 'pick_trash' && '🗑️ Pilih Sampah!'}
+                            {miniGameType === 'guess_direction' && '↔️ Tebak Arah!'}
+                            {miniGameType === 'quick_tap' && '👆 Ketuk Cepat!'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription asChild>
+                        <div className="space-y-4">
+                            {/* Result Banner */}
+                            {miniGameResult !== 'playing' && (
+                                <div className={`text-center p-3 rounded-lg font-bold text-sm animate-in fade-in zoom-in-95 ${miniGameResult === 'won' ? 'bg-green-500/10 text-green-500 border border-green-500/30' : 'bg-red-500/10 text-red-500 border border-red-500/30'
+                                    }`}>
+                                    {miniGameResult === 'won' ? '✨ Berhasil! Bonus loot +50%!' : '💨 Gagal! Loot normal...'}
+                                </div>
+                            )}
+
+                            {/* Pick Trash Game */}
+                            {miniGameType === 'pick_trash' && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground text-center mb-3">Pilih satu dari tiga tong. Satu berisi harta!</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {[0, 1, 2].map(idx => {
+                                            const isRevealed = miniGameData.revealed
+                                            const isCorrect = idx === miniGameData.correct
+                                            const isPicked = idx === miniGameData.picked
+                                            return (
+                                                <button key={idx} onClick={() => handlePickTrash(idx)}
+                                                    disabled={isRevealed}
+                                                    className={`rounded-xl border-2 p-4 flex flex-col items-center gap-2 transition-all duration-300 ${isRevealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-110' :
+                                                            isRevealed && isPicked && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
+                                                                isRevealed ? 'opacity-40 scale-95' :
+                                                                    'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
+                                                        }`}>
+                                                    <PackageIcon className={`size-8 ${isRevealed && isCorrect ? 'text-green-500' : isRevealed && isPicked ? 'text-red-500' : 'text-muted-foreground'
+                                                        }`} />
+                                                    <span className="text-xs font-medium">
+                                                        {isRevealed && isCorrect ? '💰 Harta!' : isRevealed ? '💨 Kosong' : `Tong ${idx + 1}`}
+                                                    </span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Guess Direction Game */}
+                            {miniGameType === 'guess_direction' && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground text-center mb-3">Loot tersembunyi! Tebak ke kiri atau kanan?</p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {(['left', 'right'] as const).map(dir => {
+                                            const isChosen = miniGameData.chosen === dir
+                                            const isCorrect = miniGameData.correct === dir
+                                            const revealed = miniGameData.chosen !== null
+                                            return (
+                                                <button key={dir} onClick={() => handleGuessDirection(dir)}
+                                                    disabled={revealed}
+                                                    className={`rounded-xl border-2 p-6 flex flex-col items-center gap-2 transition-all duration-300 ${revealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-105' :
+                                                            revealed && isChosen && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
+                                                                revealed ? 'opacity-40' :
+                                                                    'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
+                                                        }`}>
+                                                    {dir === 'left' ? (
+                                                        <ArrowLeftIcon className={`size-10 ${revealed && isCorrect ? 'text-green-500' : revealed && isChosen ? 'text-red-500' : 'text-muted-foreground'}`} />
+                                                    ) : (
+                                                        <ArrowRightIcon className={`size-10 ${revealed && isCorrect ? 'text-green-500' : revealed && isChosen ? 'text-red-500' : 'text-muted-foreground'}`} />
+                                                    )}
+                                                    <span className="text-sm font-medium">{dir === 'left' ? 'Kiri' : 'Kanan'}</span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Quick Tap Game */}
+                            {miniGameType === 'quick_tap' && (
+                                <div className="space-y-3">
+                                    <p className="text-xs text-muted-foreground text-center">Ketuk tombol 10 kali dalam 3 detik!</p>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span>Ketukan: <strong>{miniGameData.taps ?? 0}</strong>/10</span>
+                                        <span className={`font-mono ${(miniGameData.timeLeft ?? 3) <= 1 ? 'text-red-500' : ''}`}>
+                                            {(miniGameData.timeLeft ?? 3).toFixed(1)}s
+                                        </span>
+                                    </div>
+                                    <Progress value={((miniGameData.taps ?? 0) / 10) * 100} className="h-2" />
+                                    <button onClick={handleQuickTap}
+                                        disabled={miniGameResult !== 'playing'}
+                                        className={`w-full rounded-xl border-2 p-8 flex flex-col items-center gap-2 transition-all ${miniGameResult === 'playing' ? 'border-primary bg-primary/5 hover:bg-primary/10 cursor-pointer active:scale-95 active:bg-primary/20' :
+                                                miniGameResult === 'won' ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'
+                                            }`}>
+                                        <MousePointerClickIcon className={`size-10 ${miniGameResult === 'playing' ? 'text-primary animate-pulse' : miniGameResult === 'won' ? 'text-green-500' : 'text-red-500'
+                                            }`} />
+                                        <span className="text-sm font-bold">
+                                            {miniGameResult === 'playing' ? 'KETUK!' : miniGameResult === 'won' ? '✨ Berhasil!' : '💨 Waktu habis!'}
+                                        </span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </DialogDescription>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Loading Dialog ── */}
             <Dialog open={loadingOpen} onOpenChange={setLoadingOpen}>

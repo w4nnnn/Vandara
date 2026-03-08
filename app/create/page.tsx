@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { DumbbellIcon, BrainIcon, HeartIcon, ZapIcon, DicesIcon, SwordsIcon } from 'lucide-react'
-import AvatarComponent from '@/avataaars-assets'
+import AvatarComponent from '@/lib/avataaars'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'

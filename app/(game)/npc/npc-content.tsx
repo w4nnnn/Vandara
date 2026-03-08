@@ -16,7 +16,7 @@ import {
 // Trigger HMR
 import { useEffect } from 'react'
 import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
-import AvatarComponent from '@/avataaars-assets'
+import AvatarComponent from '@/lib/avataaars'
 import { useCombat } from './use-combat'
 import { useTranslation } from '@/lib/i18n'
 
