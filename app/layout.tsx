@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "My Game",
+  title: "Vandara",
   description: "RPG Text-Based Game",
 };
 
