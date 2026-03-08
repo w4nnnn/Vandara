@@ -25,13 +25,11 @@ export async function initiateCombat(enemyId: string) {
         return { error: 'You are in the hospital and cannot fight right now.' }
     }
 
-    if (player.currentLocation !== 'dark_alley') {
-        return { error: 'You need to be at the Dark Alley to fight.' }
-    }
+    // Allow fighting in any location now
 
-    const npcs = getActiveNpcs(player.level)
+    const npcs = getActiveNpcs(player.level, player.currentLocation)
     const enemy = npcs.find((e) => e.id === enemyId)
-    if (!enemy) return { error: 'Musuh tidak valid atau sudah kadaluarsa (ganti waktu)' }
+    if (!enemy) return { error: 'Musuh tidak valid atau sudah kadaluarsa (ganti waktu/lokasi)' }
 
     if (player.nerve < enemy.nerveCost) {
         return { error: 'Not enough nerve.' }
@@ -88,7 +86,7 @@ export async function finishCombat(
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
 
-    const npcs = getActiveNpcs(player.level)
+    const npcs = getActiveNpcs(player.level, player.currentLocation)
     const enemy = npcs.find((e) => e.id === enemyId)
     if (!enemy) return { error: 'Musuh tidak valid atau sudah kadaluarsa' }
 
@@ -193,8 +191,10 @@ export async function finishCombat(
 
     // Quest & reputation tracking
     if (won) {
-        await trackQuestProgress(player.id, 'combat_win', 'dark_alley')
-        await addReputation(player.id, 'dark_alley', REP_GAINS.combat_win)
+        if (player.currentLocation === 'dark_alley') {
+            await trackQuestProgress(player.id, 'combat_win', 'dark_alley')
+            await addReputation(player.id, 'dark_alley', REP_GAINS.combat_win)
+        }
         // Award skill points on level up
         if (leveledUp) {
             const levelsGained = newLevel - player.level
@@ -203,7 +203,9 @@ export async function finishCombat(
             }).where(eq(players.id, player.id))
         }
     } else {
-        await addReputation(player.id, 'dark_alley', REP_GAINS.combat_lose)
+        if (player.currentLocation === 'dark_alley') {
+            await addReputation(player.id, 'dark_alley', REP_GAINS.combat_lose)
+        }
     }
 
     return {
@@ -216,5 +218,94 @@ export async function finishCombat(
         itemsDropped,
         hospitalized,
         hospitalSeconds,
+    }
+}
+
+export async function pickpocketNPC(enemyId: string) {
+    const player = await getPlayer()
+    if (!player) return { error: 'Not logged in' }
+    if (player.isHospitalized) return { error: 'Kamu sedang di rumah sakit!' }
+    if (player.health <= 0) return { error: 'Kamu tidak memiliki HP tersisa.' }
+
+    const nerveCost = 3
+    if (player.nerve < nerveCost) return { error: `Nerve tidak cukup (Butuh ${nerveCost}).` }
+
+    const npcs = getActiveNpcs(player.level, player.currentLocation)
+    const enemy = npcs.find((e) => e.id === enemyId)
+    if (!enemy) return { error: 'NPC tidak ditemukan atau sudah pergi.' }
+
+    // Check if interaction was already attempted
+    const previousInteraction = await db.query.combatLogs.findFirst({
+        where: and(
+            eq(combatLogs.playerId, player.id),
+            eq(combatLogs.enemyId, enemy.id)
+        )
+    })
+
+    if (previousInteraction) {
+        return { error: 'Orang ini sudah mengenalmu. Kamu tidak bisa mencopetnya lagi.' }
+    }
+
+    // Attempt Pickpocket
+    const playerScore = player.dexterity + player.speed
+    const enemyScore = enemy.dexterity + enemy.speed
+    // Minimum 15%, max 85% success rate based on stat ratio
+    const chance = Math.max(0.15, Math.min(0.85, 0.4 + ((playerScore - enemyScore) / Math.max(1, enemyScore)) * 0.3))
+
+    // Deduct nerve
+    await db.update(players)
+        .set({ nerve: sql`${players.nerve} - ${nerveCost}`, updatedAt: new Date() })
+        .where(eq(players.id, player.id))
+
+    const isSuccess = Math.random() < chance
+
+    if (isSuccess) {
+        const moneyStolen = Math.floor(randomInt(enemy.moneyDrop[0], enemy.moneyDrop[1]) * randomInt(40, 80) / 100)
+
+        await db.update(players)
+            .set({ money: sql`${players.money} + ${moneyStolen}` })
+            .where(eq(players.id, player.id))
+
+        // Log interaction
+        await db.insert(combatLogs).values({
+            playerId: player.id,
+            enemyId: enemy.id,
+            won: true,
+            damageDealt: 0,
+            damageTaken: 0,
+            moneyEarned: moneyStolen,
+            xpEarned: 0,
+        })
+
+        return { success: true, moneyStolen }
+    } else {
+        // Punish player drastically (Immediate strike from NPC)
+        const damageReceived = Math.floor(enemy.strength * (2 + Math.random() * 2))
+        const newHealth = Math.max(0, player.health - damageReceived)
+
+        let hospitalized = false
+        const updateData: any = { health: newHealth, updatedAt: new Date() }
+        let hospitalSeconds = 0
+
+        if (newHealth <= 0) {
+            hospitalized = true
+            hospitalSeconds = enemy.level * 30
+            updateData.isHospitalized = true
+            updateData.hospitalUntil = new Date(Date.now() + hospitalSeconds * 1000)
+        }
+
+        await db.update(players).set(updateData).where(eq(players.id, player.id))
+
+        await db.insert(combatLogs).values({
+            playerId: player.id,
+            enemyId: enemy.id,
+            won: false,
+            damageDealt: 0,
+            damageTaken: damageReceived,
+            moneyEarned: 0,
+            xpEarned: 0,
+        })
+
+        return { success: false, damageReceived, hospitalized, hospitalSeconds }
     }
 }

@@ -19,6 +19,7 @@ import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
 import { ITEMS, RARITY_COLORS } from '@/lib/game/constants'
 import AvatarComponent from '@/lib/avataaars'
 import { useCombat } from './use-combat'
+import { pickpocketNPC } from '@/app/actions/combat'
 import { useTranslation } from '@/lib/i18n'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ type Player = {
     dexterity: number
     isHospitalized: boolean
     hospitalUntil: Date | null
+    currentLocation: string
 }
 
 type CombatPhase = 'select_npc' | 'npc_menu' | 'chatting' | 'in_combat' | 'result'
@@ -82,6 +84,8 @@ export default function CombatContent({ player }: { player: Player }) {
     // Phase management
     const [phase, setPhase] = useState<CombatPhase>('select_npc')
     const [error, setError] = useState<string | null>(null)
+    const [successMsg, setSuccessMsg] = useState<string | null>(null)
+    const [isPickpocketing, startPickpocketTransition] = useTransition()
 
     // Dynamic NPCs State
     const [npcs, setNpcs] = useState<ActiveNpc[]>([])
@@ -89,13 +93,13 @@ export default function CombatContent({ player }: { player: Player }) {
 
     useEffect(() => {
         const updateNpcs = () => {
-            setNpcs(getActiveNpcs(player.level))
+            setNpcs(getActiveNpcs(player.level, player.currentLocation))
             setTick(t => t + 1)
         }
         updateNpcs()
         const interval = setInterval(updateNpcs, 1000)
         return () => clearInterval(interval)
-    }, [player.level])
+    }, [player.level, player.currentLocation])
 
     // NPC interaction state
     const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null)
@@ -127,7 +131,31 @@ export default function CombatContent({ player }: { player: Player }) {
     const handleSelectNpc = (npcId: string) => {
         setSelectedNpcId(npcId)
         setError(null)
+        setSuccessMsg(null)
         setPhase('npc_menu')
+    }
+
+    const handlePickpocket = () => {
+        if (!selectedNpc) return
+        setError(null)
+        setSuccessMsg(null)
+        startPickpocketTransition(async () => {
+            const res = await pickpocketNPC(selectedNpc.id)
+            if (res.error) {
+                setError(res.error)
+                return
+            }
+            if (res.success) {
+                setSuccessMsg(`Berhasil mencopet $${res.moneyStolen}!`)
+                router.refresh()
+            } else {
+                setError(`Gagal mencopet! Kamu ketahuan dan dipukul, terkena ${res.damageReceived} damage.`)
+                if (res.hospitalized) {
+                    setTimeout(() => router.push('/hospital'), 2000)
+                }
+                router.refresh()
+            }
+        })
     }
 
     const handleStartChat = () => {
@@ -168,6 +196,7 @@ export default function CombatContent({ player }: { player: Player }) {
         setSelectedNpcId(null)
         resetCombat()
         setError(null)
+        setSuccessMsg(null)
         setChatHistory([])
         setChatStep(0)
         router.refresh()
@@ -199,7 +228,17 @@ export default function CombatContent({ player }: { player: Player }) {
             {error && (
                 <Alert variant="destructive">
                     <AlertTriangleIcon className="size-4" />
+                    <AlertTitle>Perhatian</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
+            {/* Success */}
+            {successMsg && (
+                <Alert className="border-green-500/50 bg-green-500/10 text-green-500">
+                    <PartyPopperIcon className="size-4" color="currentColor" />
+                    <AlertTitle>Berhasil</AlertTitle>
+                    <AlertDescription>{successMsg}</AlertDescription>
                 </Alert>
             )}
 
@@ -371,25 +410,36 @@ export default function CombatContent({ player }: { player: Player }) {
                         )}
 
                         {/* Action buttons */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-2">
                             <Button
                                 variant="outline"
                                 className="flex flex-col gap-1 h-auto py-4"
                                 onClick={handleStartChat}
+                                disabled={isPickpocketing}
                             >
                                 <MessageCircleIcon className="size-5" />
-                                <span className="text-sm font-medium">{t('npc.chat')}</span>
-                                <span className="text-[10px] text-muted-foreground">{t('npc.talkTo')}</span>
+                                <span className="text-xs font-medium">{t('npc.chat')}</span>
+                                <span className="text-[9px] text-muted-foreground">{t('npc.talkTo')}</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="flex flex-col gap-1 h-auto py-4"
+                                onClick={handlePickpocket}
+                                disabled={isPickpocketing || player.isHospitalized || player.health <= 0}
+                            >
+                                <FootprintsIcon className="size-5" />
+                                <span className="text-xs font-medium">Copet</span>
+                                <span className="text-[9px] text-muted-foreground">-3 nerve</span>
                             </Button>
                             <Button
                                 variant="default"
                                 className="flex flex-col gap-1 h-auto py-4"
-                                disabled={isPending || player.isHospitalized || player.health <= 0}
+                                disabled={isPending || isPickpocketing || player.isHospitalized || player.health <= 0}
                                 onClick={() => handleStartCombat(selectedNpc.id)}
                             >
                                 <SwordsIcon className="size-5" />
-                                <span className="text-sm font-medium">{t('npc.challenge')}</span>
-                                <span className="text-[10px] opacity-70">{t('npc.fightWith')}</span>
+                                <span className="text-xs font-medium">{t('npc.challenge')}</span>
+                                <span className="text-[9px] opacity-70">{t('npc.fightWith')}</span>
                             </Button>
                         </div>
                     </CardContent>

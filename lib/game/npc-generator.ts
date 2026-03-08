@@ -135,14 +135,16 @@ export type ActiveNpc = GeneratedNpc & { nextRotationTime: number }
  * Each NPC "slot" has its own independent rotation timer.
  * The number of slots changes every hour.
  */
-export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
+export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNpc[] {
     const npcs: ActiveNpc[] = []
     const now = Date.now()
 
-    // Determine number of slots available for the current hour
+    // Determine number of slots available for the current hour + location
     const hourMs = 60 * 60 * 1000
     const currentHour = Math.floor(now / hourMs)
-    const hourPrng = mulberry32(currentHour)
+    // Combine hour and location string into a numeric seed
+    const locationSeed = locationId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+    const hourPrng = mulberry32(currentHour + locationSeed)
 
     // Between 3 to 7 NPCs at a time
     const count = 3 + Math.floor(hourPrng() * 5)
@@ -156,7 +158,7 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
         const nextRotationTime = (currentSlotInterval + 1) * slotDurationMs
 
         // Seed for this specific NPC at this specific time interval
-        const slotSeed = currentSlotInterval * 1000 + i
+        const slotSeed = currentSlotInterval * 1000 + i + locationSeed
         const prng = mulberry32(slotSeed)
 
         // Generate basic identity
@@ -169,13 +171,26 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
 
         const id = `npc_${slotSeed}`
 
-        // ─── Equipment Generation ─────────────────────────────────────
-        // Chance scales with level: Lv1 → 20/15/10%, Lv15+ → 75/60/45%
-        const clampedLevel = Math.min(npcLevel, 15)
-        const weaponChance = 0.20 + (clampedLevel / 15) * 0.55
-        const armorChance = 0.15 + (clampedLevel / 15) * 0.45
-        const accessoryChance = 0.10 + (clampedLevel / 15) * 0.35
+        // Location biases
+        let equipmentBoost = 1.0
+        let statBoost = 1.0
+        let moneyBoost = 1.0
 
+        if (locationId === 'gym') {
+            statBoost = 1.25 // gym people are stronger
+        } else if (locationId === 'downtown' || locationId === 'bank') {
+            moneyBoost = 1.5 // rich people downtown
+            equipmentBoost = 0.5 // less likely to carry weapons compared to alleys
+        } else if (locationId === 'dark_alley') {
+            equipmentBoost = 1.3 // more likely to be armed
+        }
+
+        // ─── Equipment Generation ─────────────────────────────────────
+        // Chance scales with level: min 20% (Lv1) → max 75% (Lv15+)
+        const clampedLevel = Math.min(npcLevel, 15)
+        const weaponChance = Math.min(0.9, (0.20 + (clampedLevel / 15) * 0.55) * equipmentBoost)
+        const armorChance = Math.min(0.9, (0.15 + (clampedLevel / 15) * 0.45) * equipmentBoost)
+        const accessoryChance = Math.min(0.9, (0.10 + (clampedLevel / 15) * 0.35) * equipmentBoost)
         const equipment: NpcEquipment = {}
         let equipAttack = 0, equipDefense = 0, equipSpeed = 0, equipDex = 0, equipHp = 0
 
@@ -219,25 +234,25 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
         }
 
         // ─── Base Stats ───────────────────────────────────────────────
-        const baseStatPool = npcLevel * 5 + 10
+        const baseStatPool = (npcLevel * 5 + 10) * statBoost
 
         let str = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let def = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let spd = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let dex = 1 + Math.floor(prng() * (baseStatPool * 0.4))
 
-        str += Math.floor(npcLevel * 1.5)
-        def += Math.floor(npcLevel * 1.2)
-        spd += Math.floor(npcLevel * 1.3)
-        dex += Math.floor(npcLevel * 1.0)
+        str += Math.floor(npcLevel * 1.5 * statBoost)
+        def += Math.floor(npcLevel * 1.2 * statBoost)
+        spd += Math.floor(npcLevel * 1.3 * statBoost)
+        dex += Math.floor(npcLevel * 1.0 * statBoost)
 
-        // Apply equipment bonuses
+        // Apply equipment bonuses on top
         str += equipAttack
         def += equipDefense
         spd += equipSpeed
         dex += equipDex
 
-        const maxHealth = 15 + (npcLevel * 8) + (def * 2) + equipHp
+        const maxHealth = 15 + (npcLevel * 8 * statBoost) + (def * 2) + equipHp
 
         // Generate Avatar
         const avatar: Record<string, string> = {}
@@ -245,11 +260,13 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
             avatar[key] = pickRandom(options, prng)
         }
 
-        // Rewards & cost
+        // Determine rewards & cost
         const nerveCost = Math.max(2, Math.min(10, Math.floor(npcLevel / 3) + 2))
-        const minMoney = npcLevel * 5 + Math.floor(prng() * 20)
-        const maxMoney = minMoney + npcLevel * 10 + Math.floor(prng() * 50)
-        const xpDrop = npcLevel * 4 + Math.floor(prng() * 10)
+        const minMoney = Math.floor((npcLevel * 5 + Math.floor(prng() * 20)) * moneyBoost)
+        // Ensure max is strictly greater than min by at least 1, unless min is 0
+        const maxMoneyOffset = npcLevel * 10 + Math.floor(prng() * 50) + 1
+        const maxMoney = minMoney + Math.floor(maxMoneyOffset * moneyBoost)
+        const xpDrop = Math.floor((npcLevel * 4 + Math.floor(prng() * 10)) * statBoost)
 
         // Dialogue
         const linesCount = 1 + Math.floor(prng() * 3)

@@ -617,19 +617,19 @@ export const LOCATIONS: Record<LocationId, Location> = {
     id: 'city_center',
     label: 'Pusat Kota',
     description: 'Jantung kota. Titik awal yang aman.',
-    facilities: ['Beranda', 'Inventaris', 'Memulung', 'Toko', 'Properti'],
+    facilities: ['Beranda', 'Inventaris', 'Memulung', 'Toko', 'Properti', 'NPC'],
   },
   gym_district: {
     id: 'gym_district',
     label: 'Distrik Gym',
     description: 'Distrik penuh fasilitas latihan dan dojo.',
-    facilities: ['Gym', 'Memulung'],
+    facilities: ['Gym', 'Memulung', 'NPC'],
   },
   business_district: {
     id: 'business_district',
     label: 'Distrik Bisnis',
     description: 'Kantor perusahaan dan peluang kerja.',
-    facilities: ['Kerja', 'Memulung', 'Properti'],
+    facilities: ['Kerja', 'Memulung', 'Properti', 'NPC'],
   },
   dark_alley: {
     id: 'dark_alley',
