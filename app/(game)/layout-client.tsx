@@ -281,13 +281,14 @@ export default function GameLayoutClient({
                   <Link
                     key={f.href}
                     href={f.href}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${isActive
-                        ? 'bg-white/15 text-white shadow-sm'
-                        : 'text-white/50 hover:text-white hover:bg-white/8'
+                    className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${isActive
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/50 hover:text-white hover:bg-white/8'
                       }`}
                   >
                     <f.Icon className="size-3.5" />
                     {f.label}
+                    {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />}
                   </Link>
                 )
               })}
@@ -333,18 +334,20 @@ export default function GameLayoutClient({
         <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-1">
           {BOTTOM_NAV.map((item) => {
             const label = t(item.key)
-            const isActive = pathname === item.href
+            const isExact = pathname === item.href
+            const isOnFacilityPage = item.href === '/dashboard' && !BOTTOM_NAV.some(n => n.href === pathname)
+            const isActive = isExact || isOnFacilityPage
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-1 h-14 px-3 rounded-xl text-xs transition-colors ${isActive
-                    ? 'text-white bg-white/15'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
+                className={`relative flex flex-col items-center justify-center gap-1 h-14 min-w-[64px] sm:min-w-[72px] px-1 rounded-xl text-xs transition-colors ${isActive
+                  ? 'text-white bg-white/15'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
                   }`}
               >
                 <item.icon className="size-5" />
-                <span className="text-[10px] font-medium">{label}</span>
+                <span className={`text-[10px] font-medium ${isActive ? 'text-white' : ''}`}>{label}</span>
               </Link>
             )
           })}
