@@ -11,6 +11,7 @@ import { craftItem } from '@/app/actions/crafting'
 import { recycle } from '@/app/actions/recycle'
 import { CRAFTING_RECIPES, RECYCLE_RECIPES, ITEMS, RARITY_COLORS, RARITY_BG } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
+import { CombatBonuses } from '@/components/game/combat-bonuses'
 
 type PlayerItem = { id: number; itemId: string; quantity: number }
 
@@ -117,15 +118,7 @@ export default function CraftingContent({ player, playerItems }: { player: any; 
                                         {outDef?.description && (
                                             <p className="text-xs text-muted-foreground">{outDef.description}</p>
                                         )}
-                                        {outDef?.combatBonus && (
-                                            <div className="flex gap-1.5 flex-wrap">
-                                                {outDef.combatBonus.attack && <Badge variant="outline" className="text-[10px] text-red-500">+{outDef.combatBonus.attack} ATK</Badge>}
-                                                {outDef.combatBonus.defense && <Badge variant="outline" className="text-[10px] text-blue-500">+{outDef.combatBonus.defense} DEF</Badge>}
-                                                {outDef.combatBonus.speed && <Badge variant="outline" className="text-[10px] text-green-500">+{outDef.combatBonus.speed} SPD</Badge>}
-                                                {outDef.combatBonus.dexterity && <Badge variant="outline" className="text-[10px] text-purple-500">+{outDef.combatBonus.dexterity} DEX</Badge>}
-                                                {outDef.combatBonus.maxHp && <Badge variant="outline" className="text-[10px] text-pink-500">+{outDef.combatBonus.maxHp} HP</Badge>}
-                                            </div>
-                                        )}
+                                        {outDef?.combatBonus && <CombatBonuses bonus={outDef.combatBonus} />}
                                         <div className="flex flex-wrap gap-1.5">
                                             {recipe.inputs.map((inp, i) => {
                                                 const owned = invMap.get(inp.itemId) ?? 0

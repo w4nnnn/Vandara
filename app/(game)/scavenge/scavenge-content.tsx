@@ -2,38 +2,30 @@
 
 import { useState, useTransition, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-    SearchIcon, MapPinIcon, ZapIcon, ArchiveIcon, StarIcon, TrendingUpIcon,
-    FlameIcon, WrenchIcon, RecycleIcon, ScrollTextIcon, ShieldAlertIcon,
-    SparklesIcon, UserIcon, ChevronRightIcon, PackageIcon, ArrowLeftIcon, ArrowRightIcon, MousePointerClickIcon,
+    SearchIcon, MapPinIcon, ZapIcon, ArchiveIcon, TrendingUpIcon, ScrollTextIcon,
 } from 'lucide-react'
 import { scavenge } from '@/app/actions/scavenge'
 import {
-    LOCATIONS, ITEMS, type LocationId,
+    LOCATIONS, type LocationId,
     getScavengeChances, scavengeXpForLevel,
     SCAVENGE_ENERGY_COST, DOUBLE_ENERGY_COST,
-    RARITY_COLORS, RARITY_BG,
     SCAVENGE_SPOTS,
     getStreakBonus,
-    type ItemRarity,
 } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
-import * as LucideIcons from 'lucide-react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from '@/components/ui/dialog'
-import { Spinner } from '@/components/ui/spinner'
+
+import { ScavengeStats } from './scavenge-stats'
+import { SpotSelector } from './spot-selector'
+import { ScavengeMiniGame } from './scavenge-mini-game'
+import { ScavengeDialogs } from './scavenge-dialogs'
+import { LootChances } from './loot-chances'
+import { ScavengeLog } from './scavenge-log'
 
 type Player = {
     id: number
@@ -66,28 +58,6 @@ type PlayerItem = {
     id: number
     itemId: string
     quantity: number
-}
-
-const EVENT_ICONS: Record<string, React.ElementType> = {
-    crit: SparklesIcon,
-    treasure_chest: ArchiveIcon,
-    danger: ShieldAlertIcon,
-    npc_trade: UserIcon,
-}
-
-const EVENT_COLORS: Record<string, string> = {
-    crit: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30',
-    treasure_chest: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
-    danger: 'text-red-500 bg-red-500/10 border-red-500/30',
-    npc_trade: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/30',
-}
-
-function RarityBadge({ rarity, t }: { rarity: ItemRarity; t: (k: string) => string }) {
-    return (
-        <Badge variant="outline" className={`text-[10px] ${RARITY_COLORS[rarity]}`}>
-            {t(`rarity.${rarity}`)}
-        </Badge>
-    )
 }
 
 export default function ScavengeContent({
@@ -230,85 +200,19 @@ export default function ScavengeContent({
         [player.currentLocation, player.scavengeLevel]
     )
 
-    const equippedDef = player.equippedTool ? ITEMS[player.equippedTool] : null
-
-    // Inventory map for recipe checking
-    const invMap = new Map(pItems.map(pi => [pi.itemId, pi.quantity]))
-
     return (
         <div className="space-y-6">
             {/* ── Top Stats Row ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Level Card */}
-                <Card className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent" />
-                    <CardContent className="p-4 relative">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="rounded-full bg-yellow-500/10 p-1.5">
-                                <StarIcon className="size-4 text-yellow-500" />
-                            </div>
-                            <span className="text-sm font-semibold">{t('scavenge.levelTitle')}</span>
-                        </div>
-                        <div className="flex items-end justify-between mb-1.5">
-                            <span className="text-2xl font-bold">{player.scavengeLevel}</span>
-                            <span className="text-xs text-muted-foreground">
-                                {player.scavengeXp}/{xpNeeded} XP
-                            </span>
-                        </div>
-                        <Progress value={xpProgress} className="h-1.5" />
-                    </CardContent>
-                </Card>
-
-                {/* Streak Card */}
-                <Card className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent" />
-                    <CardContent className="p-4 relative">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="rounded-full bg-orange-500/10 p-1.5">
-                                <FlameIcon className="size-4 text-orange-500" />
-                            </div>
-                            <span className="text-sm font-semibold">Streak</span>
-                        </div>
-                        <div className="flex items-end justify-between">
-                            <span className="text-2xl font-bold">{currentStreak}x</span>
-                            {streakBonus.lootBonus > 0 && (
-                                <Badge variant="outline" className="text-orange-500 border-orange-500/30 text-[10px]">
-                                    +{Math.round(streakBonus.lootBonus * 100)}% loot
-                                </Badge>
-                            )}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                            {currentStreak >= 3
-                                ? t('scavenge.streakBonus', { bonus: String(Math.round(streakBonus.lootBonus * 100)) })
-                                : `${3 - currentStreak} lagi untuk bonus`
-                            }
-                        </p>
-                    </CardContent>
-                </Card>
-
-                {/* Equipped Tool Card */}
-                <Card className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-                    <CardContent className="p-4 relative">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="rounded-full bg-blue-500/10 p-1.5">
-                                <WrenchIcon className="size-4 text-blue-500" />
-                            </div>
-                            <span className="text-sm font-semibold">{t('scavenge.equippedTool')}</span>
-                        </div>
-                        {equippedDef ? (
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium">{t(`item.${equippedDef.id}`)}</p>
-                                    <RarityBadge rarity={equippedDef.rarity} t={t} />
-                                </div>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">{t('scavenge.noTool')}</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            <ScavengeStats
+                scavengeLevel={player.scavengeLevel}
+                scavengeXp={player.scavengeXp}
+                xpNeeded={xpNeeded}
+                xpProgress={xpProgress}
+                currentStreak={currentStreak}
+                streakBonus={streakBonus}
+                equippedTool={player.equippedTool}
+                t={t}
+            />
 
             {/* Level up alert */}
             {result?.leveledUp && (
@@ -322,263 +226,42 @@ export default function ScavengeContent({
             )}
 
             {/* ── Mini-Game Dialog ── */}
-            <Dialog open={miniGameOpen} onOpenChange={setMiniGameOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="text-center">
-                            {miniGameType === 'pick_trash' && '🗑️ Pilih Sampah!'}
-                            {miniGameType === 'guess_direction' && '↔️ Tebak Arah!'}
-                            {miniGameType === 'quick_tap' && '👆 Ketuk Cepat!'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription asChild>
-                        <div className="space-y-4">
-                            {/* Result Banner */}
-                            {miniGameResult !== 'playing' && (
-                                <div className={`text-center p-3 rounded-lg font-bold text-sm animate-in fade-in zoom-in-95 ${miniGameResult === 'won' ? 'bg-green-500/10 text-green-500 border border-green-500/30' : 'bg-red-500/10 text-red-500 border border-red-500/30'
-                                    }`}>
-                                    {miniGameResult === 'won' ? '✨ Berhasil! Bonus loot +50%!' : '💨 Gagal! Loot normal...'}
-                                </div>
-                            )}
+            <ScavengeMiniGame
+                open={miniGameOpen}
+                onOpenChange={setMiniGameOpen}
+                miniGameType={miniGameType}
+                miniGameResult={miniGameResult}
+                miniGameData={miniGameData}
+                onPickTrash={handlePickTrash}
+                onGuessDirection={handleGuessDirection}
+                onQuickTap={handleQuickTap}
+            />
 
-                            {/* Pick Trash Game */}
-                            {miniGameType === 'pick_trash' && (
-                                <div>
-                                    <p className="text-xs text-muted-foreground text-center mb-3">Pilih satu dari tiga tong. Satu berisi harta!</p>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {[0, 1, 2].map(idx => {
-                                            const isRevealed = miniGameData.revealed
-                                            const isCorrect = idx === miniGameData.correct
-                                            const isPicked = idx === miniGameData.picked
-                                            return (
-                                                <button key={idx} onClick={() => handlePickTrash(idx)}
-                                                    disabled={isRevealed}
-                                                    className={`rounded-xl border-2 p-4 flex flex-col items-center gap-2 transition-all duration-300 ${isRevealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-110' :
-                                                        isRevealed && isPicked && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
-                                                            isRevealed ? 'opacity-40 scale-95' :
-                                                                'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
-                                                        }`}>
-                                                    <PackageIcon className={`size-8 ${isRevealed && isCorrect ? 'text-green-500' : isRevealed && isPicked ? 'text-red-500' : 'text-muted-foreground'
-                                                        }`} />
-                                                    <span className="text-xs font-medium">
-                                                        {isRevealed && isCorrect ? '💰 Harta!' : isRevealed ? '💨 Kosong' : `Tong ${idx + 1}`}
-                                                    </span>
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Guess Direction Game */}
-                            {miniGameType === 'guess_direction' && (
-                                <div>
-                                    <p className="text-xs text-muted-foreground text-center mb-3">Loot tersembunyi! Tebak ke kiri atau kanan?</p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {(['left', 'right'] as const).map(dir => {
-                                            const isChosen = miniGameData.chosen === dir
-                                            const isCorrect = miniGameData.correct === dir
-                                            const revealed = miniGameData.chosen !== null
-                                            return (
-                                                <button key={dir} onClick={() => handleGuessDirection(dir)}
-                                                    disabled={revealed}
-                                                    className={`rounded-xl border-2 p-6 flex flex-col items-center gap-2 transition-all duration-300 ${revealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-105' :
-                                                        revealed && isChosen && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
-                                                            revealed ? 'opacity-40' :
-                                                                'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
-                                                        }`}>
-                                                    {dir === 'left' ? (
-                                                        <ArrowLeftIcon className={`size-10 ${revealed && isCorrect ? 'text-green-500' : revealed && isChosen ? 'text-red-500' : 'text-muted-foreground'}`} />
-                                                    ) : (
-                                                        <ArrowRightIcon className={`size-10 ${revealed && isCorrect ? 'text-green-500' : revealed && isChosen ? 'text-red-500' : 'text-muted-foreground'}`} />
-                                                    )}
-                                                    <span className="text-sm font-medium">{dir === 'left' ? 'Kiri' : 'Kanan'}</span>
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Quick Tap Game */}
-                            {miniGameType === 'quick_tap' && (
-                                <div className="space-y-3">
-                                    <p className="text-xs text-muted-foreground text-center">Ketuk tombol 10 kali dalam 3 detik!</p>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span>Ketukan: <strong>{miniGameData.taps ?? 0}</strong>/10</span>
-                                        <span className={`font-mono ${(miniGameData.timeLeft ?? 3) <= 1 ? 'text-red-500' : ''}`}>
-                                            {(miniGameData.timeLeft ?? 3).toFixed(1)}s
-                                        </span>
-                                    </div>
-                                    <Progress value={((miniGameData.taps ?? 0) / 10) * 100} className="h-2" />
-                                    <button onClick={handleQuickTap}
-                                        disabled={miniGameResult !== 'playing'}
-                                        className={`w-full rounded-xl border-2 p-8 flex flex-col items-center gap-2 transition-all ${miniGameResult === 'playing' ? 'border-primary bg-primary/5 hover:bg-primary/10 cursor-pointer active:scale-95 active:bg-primary/20' :
-                                            miniGameResult === 'won' ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'
-                                            }`}>
-                                        <MousePointerClickIcon className={`size-10 ${miniGameResult === 'playing' ? 'text-primary animate-pulse' : miniGameResult === 'won' ? 'text-green-500' : 'text-red-500'
-                                            }`} />
-                                        <span className="text-sm font-bold">
-                                            {miniGameResult === 'playing' ? 'KETUK!' : miniGameResult === 'won' ? '✨ Berhasil!' : '💨 Waktu habis!'}
-                                        </span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </DialogDescription>
-                </DialogContent>
-            </Dialog>
-
-            {/* ── Loading Dialog ── */}
-            <Dialog open={loadingOpen} onOpenChange={setLoadingOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('scavenge.searching')}</DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription asChild>
-                        <div className="flex flex-col items-center justify-center py-8 gap-3">
-                            <div className="relative">
-                                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-                                <div className="relative rounded-full bg-primary/10 p-4">
-                                    <SearchIcon className="size-8 text-primary animate-pulse" />
-                                </div>
-                            </div>
-                            <Spinner className="size-5" />
-                        </div>
-                    </DialogDescription>
-                </DialogContent>
-            </Dialog>
-
-            {/* ── Result Dialog ── */}
-            <Dialog open={resultOpen} onOpenChange={setResultOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="text-center">
-                            {result?.error ? t('scavenge.failed') : t('scavenge.lootFound')}
-                        </DialogTitle>
-                        {result?.spotLabel && (
-                            <p className="text-center text-xs text-muted-foreground">
-                                Ditemukan di: <span className="font-semibold">{result.spotLabel}</span>
-                            </p>
-                        )}
-                    </DialogHeader>
-                    <DialogDescription asChild>
-                        <div className="space-y-4">
-                            {result?.error && (
-                                <div className="text-center text-destructive">{result.error}</div>
-                            )}
-
-                            {/* Event Banner */}
-                            {result?.event && (
-                                <div className={`flex items-center gap-3 rounded-lg border p-3 ${EVENT_COLORS[result.event.type] ?? ''}`}>
-                                    {(() => {
-                                        const EvIcon = EVENT_ICONS[result.event.type] ?? SparklesIcon
-                                        return <EvIcon className="size-5 shrink-0" />
-                                    })()}
-                                    <div>
-                                        <div className="font-semibold text-sm">{t(`event.${result.event.type}`)}</div>
-                                        <div className="text-xs opacity-80">
-                                            {result.event.type === 'danger'
-                                                ? t('event.danger.desc', { hp: String(result.healthLost ?? 0), energy: String(result.energyLost ?? 0) })
-                                                : t(`event.${result.event.type}.desc`)
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Loot Result */}
-                            {result?.success && result.loot && (
-                                <div className="text-center space-y-2">
-                                    {(() => {
-                                        const itemId = result.loot.itemId
-                                        const def = itemId ? ITEMS[itemId] : null
-                                        const isMoney = result.loot.money !== undefined && result.loot.money > 0
-                                        const isNothing = result.loot.money === 0 && !itemId
-
-                                        return (
-                                            <div className={`rounded-xl border-2 p-4 ${def ? `${RARITY_BG[def.rarity]} ${RARITY_COLORS[def.rarity]}` : isNothing ? 'bg-muted/30' : 'bg-green-500/10 border-green-500/30'}`}>
-                                                {isNothing ? (
-                                                    <div className="text-muted-foreground">{t('scavenge.nothing')}</div>
-                                                ) : isMoney ? (
-                                                    <div className="text-green-500 text-xl font-bold">${result.loot.money}</div>
-                                                ) : (
-                                                    <div>
-                                                        <div className="text-lg font-bold">
-                                                            {result.loot.quantity && result.loot.quantity > 1 ? `${result.loot.quantity}x ` : ''}
-                                                            {t(`item.${itemId}`)}
-                                                        </div>
-                                                        {def && <RarityBadge rarity={def.rarity} t={t} />}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )
-                                    })()}
-                                </div>
-                            )}
-
-                            {/* XP footer */}
-                            {result?.success && (
-                                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                                    <span>+{result.xpGained} XP {t('scavenge.xpLabel')}</span>
-                                    {result.streak && result.streak > 1 && (
-                                        <span className="flex items-center gap-1">
-                                            <FlameIcon className="size-3 text-orange-500" />
-                                            Streak {result.streak}x
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </DialogDescription>
-                    <DialogFooter>
-                        <Button onClick={() => setResultOpen(false)} className="w-full">{t('close')}</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* ── Loading + Result Dialogs ── */}
+            <ScavengeDialogs
+                loadingOpen={loadingOpen}
+                onLoadingChange={setLoadingOpen}
+                resultOpen={resultOpen}
+                onResultChange={setResultOpen}
+                result={result}
+                t={t}
+            />
 
             {/* ── Main Action Card ── */}
             <Card className="relative overflow-hidden border-primary/20">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-                <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-2">
-                        <MapPinIcon className="size-5 text-primary" />
-                        {t('scavenge.title', { location: currentLoc ? t(`loc.${player.currentLocation}`) : t('unknown') })}
-                    </CardTitle>
+                <CardHeader className="relative flex items-center gap-2">
+                    <MapPinIcon className="size-5 text-primary" />
+                    {t('scavenge.title', { location: currentLoc ? t(`loc.${player.currentLocation}`) : t('unknown') })}
                     <CardDescription>{t('scavenge.desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="relative space-y-4">
                     {/* Spot Selection */}
-                    {spots.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium">Pilih Tempat Memulung:</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {spots.map(spot => {
-                                    const IconComp = (LucideIcons as any)[spot.icon + 'Icon'] ?? LucideIcons.MapPinIcon
-                                    const isSelected = selectedSpotId === spot.id
-                                    return (
-                                        <button
-                                            key={spot.id}
-                                            onClick={() => setSelectedSpotId(isSelected ? null : spot.id)}
-                                            className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${isSelected
-                                                ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                                                : 'hover:bg-muted/50 text-muted-foreground'
-                                                }`}
-                                        >
-                                            <IconComp className="size-5 shrink-0" />
-                                            <div>
-                                                <div className="text-sm font-medium">{spot.label}</div>
-                                                <div className="text-[10px] opacity-70">{spot.hint}</div>
-                                            </div>
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                            {!selectedSpotId && (
-                                <p className="text-[10px] text-muted-foreground">Tidak memilih = tempat acak</p>
-                            )}
-                        </div>
-                    )}
+                    <SpotSelector
+                        spots={spots}
+                        selectedSpotId={selectedSpotId}
+                        onSelectSpot={setSelectedSpotId}
+                    />
 
                     {/* Mode Toggle */}
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-1">
@@ -645,103 +328,12 @@ export default function ScavengeContent({
                     </TabsTrigger>
                 </TabsList>
 
-                {/* ── Loot Chances Tab ── */}
                 <TabsContent value="chances">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <ArchiveIcon className="size-4 text-primary" />
-                                {t('scavenge.lootChances')}
-                            </CardTitle>
-                            <CardDescription className="text-xs">{t('scavenge.lootChancesDesc')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-1.5">
-                                {lootChances.map(({ entry, chance }) => {
-                                    const itemDef = entry.itemId && entry.itemId !== 'junk' ? ITEMS[entry.itemId] : null
-                                    let label: string
-                                    if (entry.type === 'none') label = t('scavenge.nothing')
-                                    else if (entry.type === 'money') label = t('scavenge.moneyDrop')
-                                    else if (entry.itemId === 'junk') label = t('scavenge.junkLabel')
-                                    else label = t(`item.${entry.itemId}`)
-
-                                    return (
-                                        <div key={entry.id} className={`flex items-center justify-between rounded-md border px-3 py-2 ${itemDef ? RARITY_BG[itemDef.rarity] : ''}`}>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm">{label}</span>
-                                                {itemDef && <RarityBadge rarity={itemDef.rarity} t={t} />}
-                                                {entry.type === 'money' && (
-                                                    <Badge variant="outline" className="text-[10px]">
-                                                        ${entry.moneyMin}–${entry.moneyMax}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Progress value={chance} className="h-1.5 w-16" />
-                                                <span className="text-xs font-mono w-12 text-end">{chance}%</span>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <LootChances lootChances={lootChances} t={t} />
                 </TabsContent>
 
-
-                {/* ── Logs Tab ── */}
                 <TabsContent value="logs">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <ScrollTextIcon className="size-4 text-muted-foreground" />
-                                {t('scavenge.recentLogs')}
-                            </CardTitle>
-                            <CardDescription className="text-xs">{t('scavenge.logsDesc')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {logs.length === 0 ? (
-                                <p className="py-6 text-center text-sm text-muted-foreground">{t('scavenge.noLogs')}</p>
-                            ) : (
-                                <div className="space-y-1">
-                                    {logs.map(log => {
-                                        const itemDef = log.itemId ? ITEMS[log.itemId] : null
-                                        return (
-                                            <div key={log.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    {log.eventType && (() => {
-                                                        const EvIcon = EVENT_ICONS[log.eventType] ?? SparklesIcon
-                                                        return <EvIcon className="size-3.5 text-yellow-500" />
-                                                    })()}
-                                                    <span>
-                                                        {log.resultType === 'none'
-                                                            ? t('scavenge.logNothing')
-                                                            : log.resultType === 'money'
-                                                                ? `$${log.moneyAmount}`
-                                                                : `${log.quantity && log.quantity > 1 ? `${log.quantity}x ` : ''}${t(`item.${log.itemId}`)}`
-                                                        }
-                                                    </span>
-                                                    {itemDef && <RarityBadge rarity={itemDef.rarity} t={t} />}
-                                                    {log.doubleMode && (
-                                                        <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/30">2x</Badge>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    {log.streak > 1 && (
-                                                        <span className="flex items-center gap-0.5">
-                                                            <FlameIcon className="size-3 text-orange-500" />
-                                                            {log.streak}
-                                                        </span>
-                                                    )}
-                                                    <span>{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ScavengeLog logs={logs} t={t} />
                 </TabsContent>
             </Tabs>
         </div>

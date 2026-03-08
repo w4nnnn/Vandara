@@ -15,6 +15,9 @@ import {
   SparklesIcon,
   HammerIcon,
   WrenchIcon,
+  SwordIcon,
+  ShieldIcon,
+  GemIcon,
 } from 'lucide-react'
 
 type PlayerItem = {
@@ -33,6 +36,9 @@ const CATEGORY_ICON: Record<ItemCategory, React.ElementType> = {
   material: HammerIcon,
   junk: BackpackIcon,
   tool: WrenchIcon,
+  weapon: SwordIcon,
+  armor: ShieldIcon,
+  accessory: GemIcon,
 }
 
 export default function InventoryContent({

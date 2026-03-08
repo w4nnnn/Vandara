@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingCartIcon, CoinsIcon, StoreIcon, SkullIcon, SparklesIcon, PackageIcon, HammerIcon, BackpackIcon, WrenchIcon } from 'lucide-react'
+import { ShoppingCartIcon, CoinsIcon, StoreIcon, SkullIcon, SparklesIcon, PackageIcon, HammerIcon, BackpackIcon, WrenchIcon, SwordIcon, ShieldIcon, GemIcon } from 'lucide-react'
 import { buyShopItem, SHOP_INVENTORY } from '@/app/actions/shop'
 import { ITEMS, LOCATIONS, type LocationId, type ItemCategory } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
@@ -23,6 +23,9 @@ const CATEGORY_ICON: Record<ItemCategory, React.ElementType> = {
     material: HammerIcon,
     junk: BackpackIcon,
     tool: WrenchIcon,
+    weapon: SwordIcon,
+    armor: ShieldIcon,
+    accessory: GemIcon,
 }
 
 export default function ShopContent({ player }: { player: Player }) {
