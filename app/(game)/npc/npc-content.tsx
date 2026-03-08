@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
     HeartPulseIcon, AlertTriangleIcon, PartyPopperIcon,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
 import { useCombat } from './use-combat'
 import { pickpocketNPC } from '@/app/actions/combat'
@@ -34,6 +34,7 @@ type Player = {
     isHospitalized: boolean
     hospitalUntil: Date | null
     currentLocation: string
+    unlockedSkills: string
 }
 
 type CombatPhase = 'select_npc' | 'npc_menu' | 'chatting' | 'in_combat' | 'result'
@@ -43,6 +44,7 @@ type CombatPhase = 'select_npc' | 'npc_menu' | 'chatting' | 'in_combat' | 'resul
 export default function CombatContent({ player }: { player: Player }) {
     const router = useRouter()
     const { t } = useTranslation()
+    const unlockedSkills: string[] = useMemo(() => JSON.parse(player.unlockedSkills || '[]'), [player.unlockedSkills])
 
     // Phase management
     const [phase, setPhase] = useState<CombatPhase>('select_npc')
@@ -82,10 +84,11 @@ export default function CombatContent({ player }: { player: Player }) {
         round,
         turnLog,
         result,
+        availableMoves,
         handleStartCombat,
         processTurn,
         resetCombat,
-    } = useCombat(player.level, setPhase, setError)
+    } = useCombat(player.level, setPhase, setError, unlockedSkills)
 
     // ─── NPC Selection ─────────────────────────────────────────────
 
@@ -262,6 +265,7 @@ export default function CombatContent({ player }: { player: Player }) {
                     isDefending={isDefending}
                     isPending={isPending}
                     turnLog={turnLog}
+                    availableMoves={availableMoves}
                     onAction={processTurn}
                     t={t}
                 />

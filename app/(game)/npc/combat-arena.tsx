@@ -4,9 +4,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-    SwordsIcon, ShieldIcon, ShieldCheckIcon, FootprintsIcon,
+    SwordsIcon, ShieldIcon, ShieldCheckIcon, FootprintsIcon, ZapIcon,
 } from 'lucide-react'
 import { HealthBar } from '@/components/game/health-bar'
+import type { SpecialMove } from '@/lib/game/constants'
 
 type TurnLogEntry = {
     round: number
@@ -26,7 +27,8 @@ type CombatArenaProps = {
     isDefending: boolean
     isPending: boolean
     turnLog: TurnLogEntry[]
-    onAction: (action: 'attack' | 'heavy_attack' | 'defend' | 'flee') => void
+    availableMoves: SpecialMove[]
+    onAction: (action: 'attack' | 'heavy_attack' | 'defend' | 'flee' | `special_${string}`) => void
     t: (key: string) => string
 }
 
@@ -41,6 +43,7 @@ export function CombatArena({
     isDefending,
     isPending,
     turnLog,
+    availableMoves,
     onAction,
     t,
 }: CombatArenaProps) {
@@ -127,6 +130,26 @@ export function CombatArena({
                             <span className="text-[10px] opacity-70">{t('npc.fleeDesc')}</span>
                         </Button>
                     </div>
+                    {availableMoves.length > 0 && (
+                        <div className="mt-3 border-t pt-3">
+                            <p className="text-xs text-muted-foreground mb-2">⚡ Jurus Spesial</p>
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                {availableMoves.map((move) => (
+                                    <Button
+                                        key={move.id}
+                                        onClick={() => onAction(`special_${move.id}`)}
+                                        disabled={isPending}
+                                        variant="outline"
+                                        className="flex flex-col gap-0.5 h-auto py-2 border-purple-500/30 hover:bg-purple-500/10 text-xs"
+                                    >
+                                        <ZapIcon className="size-4 text-purple-400" />
+                                        <span className="font-medium">{move.label}</span>
+                                        <span className="text-[9px] opacity-60 text-center">{move.description.slice(0, 40)}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

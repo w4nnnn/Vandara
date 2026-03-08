@@ -2,6 +2,7 @@ import { useState, useTransition, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { initiateCombat, finishCombat } from '@/app/actions/combat'
 import { useTranslation } from '@/lib/i18n'
+import { SPECIAL_MOVES } from '@/lib/game/constants'
 
 export type CombatantStats = {
     health: number
@@ -12,7 +13,7 @@ export type CombatantStats = {
     dexterity: number
 }
 
-export type TurnAction = 'attack' | 'heavy_attack' | 'defend' | 'flee'
+export type TurnAction = 'attack' | 'heavy_attack' | 'defend' | 'flee' | `special_${string}`
 
 export type TurnLog = {
     round: number
@@ -57,7 +58,8 @@ function calcDamage(
 export function useCombat(
     playerLevel: number,
     onPhaseChange: (phase: 'in_combat' | 'result') => void,
-    onError: (err: string) => void
+    onError: (err: string) => void,
+    unlockedSkills: string[] = []
 ) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
@@ -72,9 +74,18 @@ export function useCombat(
     const [enemyMaxHP, setEnemyMaxHP] = useState(0)
     const [enemyStats, setEnemyStats] = useState<CombatantStats | null>(null)
     const [isDefending, setIsDefending] = useState(false)
+    const [enemyStunned, setEnemyStunned] = useState(false)
+    const [enemyBleedDmg, setEnemyBleedDmg] = useState(0)
     const [round, setRound] = useState(0)
     const [turnLog, setTurnLog] = useState<TurnLog[]>([])
     const [result, setResult] = useState<CombatResultData | null>(null)
+
+    // Available special moves based on level and skills
+    const availableMoves = SPECIAL_MOVES.filter(m => {
+        if (playerLevel < m.levelRequired) return false
+        if (m.skillRequired && !unlockedSkills.includes(m.skillRequired)) return false
+        return true
+    })
 
     const handleStartCombat = useCallback((eId: string) => {
         startTransition(async () => {
@@ -108,39 +119,96 @@ export function useCombat(
         let enemyDmg = 0
         let message = ''
         let fled = false
+        let newEnemyStunned = false
+        let newBleedDmg = enemyBleedDmg
+
+        // Apply bleed damage at start of turn
+        if (enemyBleedDmg > 0) {
+            newEnemyHP -= enemyBleedDmg
+            message += `🩸 Pendarahan: ${enemyBleedDmg} dmg. `
+            newBleedDmg = 0 // bleed lasts 1 turn
+        }
 
         if (action === 'flee') {
             const fleeChance = (playerStats.speed + playerStats.dexterity) /
                 (playerStats.speed + playerStats.dexterity + enemyStats.speed + enemyStats.dexterity) + 0.1
             if (Math.random() < fleeChance) {
                 fled = true
-                message = t('combat.fleeSuccess')
+                message += t('combat.fleeSuccess')
             } else {
                 enemyDmg = calcDamage(enemyStats, playerStats)
                 newPlayerHP -= enemyDmg
-                message = t('combat.fleeFail', { dmg: String(enemyDmg) })
+                message += t('combat.fleeFail', { dmg: String(enemyDmg) })
+            }
+        } else if (action.startsWith('special_')) {
+            const moveId = action.replace('special_', '')
+            const move = SPECIAL_MOVES.find(m => m.id === moveId)
+            if (move) {
+                if (move.effect === 'heal') {
+                    // Heal move — restore HP
+                    const healAmt = Math.floor(playerMaxHP * 0.15)
+                    newPlayerHP = Math.min(playerMaxHP, newPlayerHP + healAmt)
+                    message += `💚 ${move.label}: +${healAmt} HP. `
+                } else {
+                    // Offensive special move
+                    const adjustedStats = {
+                        ...playerStats,
+                        speed: Math.ceil(playerStats.speed * (1 + move.accuracyModifier)),
+                        dexterity: Math.ceil(playerStats.dexterity * (1 + move.accuracyModifier)),
+                    }
+                    playerDmg = calcDamage(adjustedStats, enemyStats, move.damageMultiplier)
+                    if (playerDmg > 0) {
+                        message += `⚡ ${move.label}: ${playerDmg} dmg! `
+                        // Check for special effects
+                        if (move.effect === 'stun' && move.effectChance && Math.random() < move.effectChance) {
+                            newEnemyStunned = true
+                            message += '💫 Musuh terkejut! '
+                        }
+                        if (move.effect === 'bleed' && move.effectChance && Math.random() < move.effectChance) {
+                            newBleedDmg = Math.ceil(playerDmg * 0.3)
+                            message += `🩸 Musuh berdarah (${newBleedDmg} dmg ronde depan)! `
+                        }
+                    } else {
+                        message += `⚡ ${move.label} meleset! `
+                    }
+                }
+                newEnemyHP -= playerDmg
+
+                // Enemy attacks (if alive and not stunned)
+                if (newEnemyHP > 0 && !newEnemyStunned && !enemyStunned) {
+                    const defMultiplier = isDefending ? 2.0 : 1.0
+                    const defendingPlayer = { ...playerStats, defense: Math.ceil(playerStats.defense * defMultiplier) }
+                    enemyDmg = calcDamage(enemyStats, defendingPlayer)
+                    newPlayerHP -= enemyDmg
+                    message += enemyDmg > 0 ? t('combat.enemyHit', { dmg: String(enemyDmg) }) : t('combat.enemyMiss')
+                } else if (newEnemyHP > 0 && (newEnemyStunned || enemyStunned)) {
+                    message += ' Musuh terlalu terkejut untuk menyerang!'
+                } else if (newEnemyHP <= 0) {
+                    message += t('combat.enemyDefeated')
+                }
+                setIsDefending(false)
             }
         } else {
             if (action === 'attack') {
                 playerDmg = calcDamage(playerStats, enemyStats, 1.0)
-                message = playerDmg > 0
+                message += playerDmg > 0
                     ? t('combat.attackHit', { dmg: String(playerDmg) })
                     : t('combat.attackMiss')
             } else if (action === 'heavy_attack') {
                 const boosted = { ...playerStats, strength: Math.ceil(playerStats.strength * 1.8), speed: Math.ceil(playerStats.speed * 0.5) }
                 playerDmg = calcDamage(boosted, enemyStats, 1.0)
-                message = playerDmg > 0
+                message += playerDmg > 0
                     ? t('combat.heavyHit', { dmg: String(playerDmg) })
                     : t('combat.heavyMiss')
             } else if (action === 'defend') {
                 setIsDefending(true)
-                message = t('combat.defending')
+                message += t('combat.defending')
             }
 
             newEnemyHP -= playerDmg
 
-            // Musuh menyerang kembali (jika masih hidup)
-            if (newEnemyHP > 0) {
+            // Enemy counter attack (if alive and not stunned)
+            if (newEnemyHP > 0 && !enemyStunned) {
                 const defMultiplier = (action === 'defend' || isDefending) ? 2.0 : 1.0
                 const defendingPlayer = {
                     ...playerStats,
@@ -153,6 +221,8 @@ export function useCombat(
                         ? t('combat.enemyHitDefend', { dmg: String(enemyDmg) })
                         : t('combat.enemyHit', { dmg: String(enemyDmg) })
                     : t('combat.enemyMiss')
+            } else if (newEnemyHP > 0 && enemyStunned) {
+                message += ' Musuh terlalu terkejut untuk menyerang!'
             } else {
                 message += t('combat.enemyDefeated')
             }
@@ -161,6 +231,9 @@ export function useCombat(
                 setIsDefending(false)
             }
         }
+
+        setEnemyStunned(newEnemyStunned)
+        setEnemyBleedDmg(newBleedDmg)
 
         const logEntry: TurnLog = {
             round,
@@ -226,7 +299,7 @@ export function useCombat(
                 }
             })
         }
-    }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, playerLevel, router, onError, onPhaseChange, t])
+    }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, enemyStunned, enemyBleedDmg, playerLevel, playerMaxHP, router, onError, onPhaseChange, t])
 
     const resetCombat = useCallback(() => {
         setResult(null)
@@ -248,6 +321,7 @@ export function useCombat(
         round,
         turnLog,
         result,
+        availableMoves,
         handleStartCombat,
         processTurn,
         resetCombat,

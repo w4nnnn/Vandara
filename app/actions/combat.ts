@@ -8,6 +8,7 @@ import { xpForLevel, ITEMS, REP_GAINS, SKILL_POINTS_PER_LEVEL, type LocationId }
 import { getActiveNpcs } from '@/lib/game/npc-generator'
 import { trackQuestProgress } from './quests'
 import { addReputation } from './reputation'
+import { jailPlayer } from './jail'
 
 function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -225,6 +226,7 @@ export async function pickpocketNPC(enemyId: string) {
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
     if (player.isHospitalized) return { error: 'Kamu sedang di rumah sakit!' }
+    if (player.isJailed) return { error: 'Kamu sedang di penjara!' }
     if (player.health <= 0) return { error: 'Kamu tidak memiliki HP tersisa.' }
 
     const nerveCost = 3
@@ -306,6 +308,15 @@ export async function pickpocketNPC(enemyId: string) {
             xpEarned: 0,
         })
 
-        return { success: false, damageReceived, hospitalized, hospitalSeconds }
+        // 30% chance to get jailed on failed pickpocket
+        let jailed = false
+        let jailDuration = 0
+        if (!hospitalized && Math.random() < 0.3) {
+            const jailResult = await jailPlayer(player.id, 'pickpocket_fail')
+            jailed = true
+            jailDuration = jailResult.duration
+        }
+
+        return { success: false, damageReceived, hospitalized, hospitalSeconds, jailed, jailDuration }
     }
 }

@@ -15,6 +15,10 @@ import {
   SearchIcon,
   StoreIcon,
   UsersIcon,
+  GraduationCapIcon,
+  LockIcon,
+  ShoppingBagIcon,
+  ShieldIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -46,6 +50,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Dumbbell: DumbbellIcon,
   Briefcase: BriefcaseIcon,
   HeartPulse: HeartPulseIcon,
+  GraduationCap: GraduationCapIcon,
+  Lock: LockIcon,
+  ShoppingBag: ShoppingBagIcon,
+  Shield: ShieldIcon,
 }
 
 type Player = {

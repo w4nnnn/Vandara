@@ -95,8 +95,26 @@ export async function getPlayer() {
   })
   if (!player) return null
 
-  // Auto-clear hospital if timer expired
   const now = new Date()
+
+  // Auto-release jail if timer expired
+  let isJailed = player.isJailed
+  let jailUntil = player.jailUntil
+  if (isJailed && jailUntil && now >= jailUntil) {
+    isJailed = false
+    jailUntil = null
+    await db
+      .update(players)
+      .set({
+        isJailed: false,
+        jailUntil: null,
+        jailReason: null,
+        updatedAt: now,
+      })
+      .where(eq(players.id, player.id))
+  }
+
+  // Auto-clear hospital if timer expired
   let isHospitalized = player.isHospitalized
   let hospitalUntil = player.hospitalUntil
   if (isHospitalized && hospitalUntil && now >= hospitalUntil) {
@@ -203,6 +221,8 @@ export async function getPlayer() {
     happy: regen.happy,
     isHospitalized,
     hospitalUntil,
+    isJailed,
+    jailUntil,
     currentLocation,
     travelingTo,
     travelingUntil,

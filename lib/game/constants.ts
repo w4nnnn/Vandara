@@ -617,25 +617,25 @@ export const LOCATIONS: Record<LocationId, Location> = {
     id: 'city_center',
     label: 'Pusat Kota',
     description: 'Jantung kota. Titik awal yang aman.',
-    facilities: ['Beranda', 'Inventaris', 'Memulung', 'Toko', 'Properti', 'NPC'],
+    facilities: ['Beranda', 'Inventaris', 'Memulung', 'Toko', 'Properti', 'NPC', 'Marketplace', 'Pendidikan'],
   },
   gym_district: {
     id: 'gym_district',
     label: 'Distrik Gym',
     description: 'Distrik penuh fasilitas latihan dan dojo.',
-    facilities: ['Gym', 'Memulung', 'NPC'],
+    facilities: ['Gym', 'Memulung', 'NPC', 'Pendidikan'],
   },
   business_district: {
     id: 'business_district',
     label: 'Distrik Bisnis',
     description: 'Kantor perusahaan dan peluang kerja.',
-    facilities: ['Kerja', 'Memulung', 'Properti', 'NPC'],
+    facilities: ['Kerja', 'Memulung', 'Properti', 'NPC', 'Marketplace'],
   },
   dark_alley: {
     id: 'dark_alley',
     label: 'Gang Gelap',
     description: 'Bagian kota yang berbahaya. Hati-hati.',
-    facilities: ['NPC', 'Memulung', 'Toko', 'Properti'],
+    facilities: ['NPC', 'Memulung', 'Toko', 'Properti', 'Faksi', 'Penjara'],
   },
   hospital: {
     id: 'hospital',
@@ -675,6 +675,10 @@ export const FACILITY_ROUTES: Record<string, { href: string; iconKey: string }> 
   'Gym': { href: '/gym', iconKey: 'Dumbbell' },
   'Kerja': { href: '/jobs', iconKey: 'Briefcase' },
   'Rumah Sakit': { href: '/hospital', iconKey: 'HeartPulse' },
+  'Pendidikan': { href: '/education', iconKey: 'GraduationCap' },
+  'Penjara': { href: '/jail', iconKey: 'Lock' },
+  'Marketplace': { href: '/marketplace', iconKey: 'ShoppingBag' },
+  'Faksi': { href: '/faction', iconKey: 'Shield' },
 }
 
 // ─── QUESTS ──────────────────────────────────────────────────────
@@ -985,4 +989,164 @@ export const REP_GAINS: Record<string, number> = {
   gym_train: 1,
   shop_buy: 2,
   craft: 3,
+}
+
+// ─── COMBAT EXPANSION ────────────────────────────────────────────
+
+export interface SpecialMove {
+  id: string
+  label: string
+  description: string
+  energyCost: number
+  nerveCost: number
+  damageMultiplier: number
+  accuracyModifier: number   // e.g. -0.2 = 20% less accurate
+  effect?: 'stun' | 'bleed' | 'heal'
+  effectChance?: number
+  levelRequired: number
+  skillRequired?: string     // skill tree skill id
+}
+
+export const SPECIAL_MOVES: SpecialMove[] = [
+  {
+    id: 'power_strike', label: 'Pukulan Tenaga', description: 'Serangan penuh tenaga. 1.8x damage, akurasi berkurang.',
+    energyCost: 0, nerveCost: 0, damageMultiplier: 1.8, accuracyModifier: -0.15,
+    levelRequired: 3,
+  },
+  {
+    id: 'leg_sweep', label: 'Sapuan Kaki', description: 'Tendang kaki musuh. 1.2x damage, 30% stun.',
+    energyCost: 0, nerveCost: 0, damageMultiplier: 1.2, accuracyModifier: 0,
+    effect: 'stun', effectChance: 0.3, levelRequired: 5,
+  },
+  {
+    id: 'blade_fury', label: 'Amukan Pisau', description: 'Serangan bertubi-tubi. 2.2x damage, akurasi rendah.',
+    energyCost: 0, nerveCost: 0, damageMultiplier: 2.2, accuracyModifier: -0.3,
+    effect: 'bleed', effectChance: 0.4, levelRequired: 8, skillRequired: 'c_power1',
+  },
+  {
+    id: 'emergency_heal', label: 'Pertolongan Darurat', description: 'Pulihkan 15% HP, skip serangan.',
+    energyCost: 0, nerveCost: 0, damageMultiplier: 0, accuracyModifier: 0,
+    effect: 'heal', effectChance: 1.0, levelRequired: 6,
+  },
+  {
+    id: 'critical_aim', label: 'Bidik Mematikan', description: 'Bidik titik vital. 2.5x damage, sangat tidak akurat.',
+    energyCost: 0, nerveCost: 0, damageMultiplier: 2.5, accuracyModifier: -0.4,
+    levelRequired: 12, skillRequired: 'c_crit',
+  },
+]
+
+// ─── EDUCATION SYSTEM ────────────────────────────────────────────
+
+export interface CourseDef {
+  id: string
+  label: string
+  description: string
+  durationMinutes: number
+  cost: number
+  levelRequired: number
+  rewards: {
+    statBonus?: Partial<Record<'strength' | 'defense' | 'speed' | 'dexterity', number>>
+    maxEnergyBonus?: number
+    maxNerveBonus?: number
+    maxHealthBonus?: number
+    maxHappyBonus?: number
+  }
+}
+
+export const COURSES: CourseDef[] = [
+  {
+    id: 'first_aid', label: 'Pertolongan Pertama', description: 'Pelajari dasar-dasar pertolongan pertama.',
+    durationMinutes: 30, cost: 2000, levelRequired: 2,
+    rewards: { maxHealthBonus: 10 },
+  },
+  {
+    id: 'fitness_101', label: 'Kebugaran Dasar', description: 'Kursus dasar kebugaran tubuh.',
+    durationMinutes: 60, cost: 5000, levelRequired: 3,
+    rewards: { maxEnergyBonus: 10, statBonus: { strength: 2 } },
+  },
+  {
+    id: 'martial_arts', label: 'Bela Diri', description: 'Teknik bela diri dasar sampai menengah.',
+    durationMinutes: 120, cost: 15000, levelRequired: 5,
+    rewards: { statBonus: { strength: 3, defense: 3 } },
+  },
+  {
+    id: 'parkour_course', label: 'Kursus Parkour', description: 'Latih kelincahan dan kecepatan alami.',
+    durationMinutes: 90, cost: 10000, levelRequired: 4,
+    rewards: { statBonus: { speed: 3, dexterity: 2 } },
+  },
+  {
+    id: 'meditation', label: 'Meditasi', description: 'Tingkatkan ketenangan dan fokus mental.',
+    durationMinutes: 45, cost: 3000, levelRequired: 2,
+    rewards: { maxHappyBonus: 15, maxNerveBonus: 5 },
+  },
+  {
+    id: 'advanced_combat', label: 'Tempur Lanjutan', description: 'Teknik tempur tingkat lanjut.',
+    durationMinutes: 180, cost: 30000, levelRequired: 10,
+    rewards: { statBonus: { strength: 5, defense: 5, speed: 3, dexterity: 3 } },
+  },
+  {
+    id: 'survival_training', label: 'Latihan Bertahan Hidup', description: 'Teknik bertahan dalam kondisi ekstrim.',
+    durationMinutes: 150, cost: 25000, levelRequired: 8,
+    rewards: { maxHealthBonus: 25, maxEnergyBonus: 15 },
+  },
+]
+
+// ─── FACTION / GANG SYSTEM ──────────────────────────────────────
+
+export const FACTION_CREATE_COST = 50000
+export const FACTION_MAX_MEMBERS = 10
+export const FACTION_WAR_COOLDOWN_MS = 4 * 60 * 60 * 1000 // 4 hours
+
+export const FACTION_TERRITORY_BONUSES: Record<string, { label: string; bonus: string }> = {
+  city_center: { label: 'Pusat Kota', bonus: '+10% uang dari semua aktivitas' },
+  gym_district: { label: 'Distrik Gym', bonus: '+15% hasil latihan gym' },
+  business_district: { label: 'Distrik Bisnis', bonus: '+15% gaji kerja' },
+  dark_alley: { label: 'Gang Gelap', bonus: '+10% loot memulung & +20% uang combat' },
+  hospital: { label: 'Rumah Sakit', bonus: '-30% waktu rawat rumah sakit' },
+}
+
+// ─── MARKETPLACE ─────────────────────────────────────────────────
+
+export const MARKET_LISTING_FEE_PERCENT = 5  // 5% fee on listing
+export const MARKET_MAX_LISTINGS = 10         // max active listings per player
+export const MARKET_MIN_PRICE = 10
+export const MARKET_MAX_PRICE = 10000000
+
+// ─── JAIL / PENJARA ─────────────────────────────────────────────
+
+export type JailCrime = 'pickpocket_fail' | 'crime_caught' | 'faction_war_loss'
+
+export interface JailActivityDef {
+  id: string
+  label: string
+  description: string
+  energyCost: number
+  reductionSeconds: number   // how much time is reduced
+  cooldownMs: number
+  chance: number             // success chance 0-1
+}
+
+export const JAIL_ACTIVITIES: JailActivityDef[] = [
+  {
+    id: 'workout', label: 'Olahraga', description: 'Latihan push-up dan sit-up di sel.',
+    energyCost: 5, reductionSeconds: 30, cooldownMs: 60 * 1000, chance: 0.9,
+  },
+  {
+    id: 'bribe_guard', label: 'Suap Penjaga', description: 'Coba sogok penjaga untuk keluar lebih cepat.',
+    energyCost: 10, reductionSeconds: 120, cooldownMs: 5 * 60 * 1000, chance: 0.4,
+  },
+  {
+    id: 'good_behavior', label: 'Kelakuan Baik', description: 'Tunjukkan perilaku baik untuk pengurangan hukuman.',
+    energyCost: 3, reductionSeconds: 60, cooldownMs: 3 * 60 * 1000, chance: 0.7,
+  },
+  {
+    id: 'escape_attempt', label: 'Coba Kabur', description: 'Nekat kabur. Berhasil = bebas, gagal = tambah waktu.',
+    energyCost: 20, reductionSeconds: 9999, cooldownMs: 10 * 60 * 1000, chance: 0.15,
+  },
+]
+
+export const JAIL_DURATIONS: Record<JailCrime, number> = {
+  pickpocket_fail: 120,     // 2 minutes
+  crime_caught: 300,         // 5 minutes
+  faction_war_loss: 180,     // 3 minutes
 }

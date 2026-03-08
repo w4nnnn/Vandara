@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, integer, bigint, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, serial, varchar, integer, bigint, timestamp, boolean, text } from 'drizzle-orm/pg-core'
 
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
@@ -37,6 +37,15 @@ export const players = pgTable('players', {
   // Skill tree
   skillPoints: integer('skill_points').notNull().default(0),
   unlockedSkills: varchar('unlocked_skills', { length: 500 }).notNull().default('[]'),
+  // Jail
+  isJailed: boolean('is_jailed').notNull().default(false),
+  jailUntil: timestamp('jail_until'),
+  jailReason: varchar('jail_reason', { length: 100 }),
+  // Education
+  activeCoursId: varchar('active_course_id', { length: 50 }),
+  courseFinishAt: timestamp('course_finish_at'),
+  // Faction
+  factionId: integer('faction_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -159,4 +168,69 @@ export const playerReputation = pgTable('player_reputation', {
     .references(() => players.id),
   locationId: varchar('location_id', { length: 50 }).notNull(),
   reputation: integer('reputation').notNull().default(0),
+})
+
+// Education — completed courses
+export const playerEducation = pgTable('player_education', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  courseId: varchar('course_id', { length: 50 }).notNull(),
+  completedAt: timestamp('completed_at').notNull().defaultNow(),
+})
+
+// Factions
+export const factions = pgTable('factions', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 50 }).notNull().unique(),
+  tag: varchar('tag', { length: 5 }).notNull().unique(),
+  leaderId: integer('leader_id')
+    .notNull()
+    .references(() => players.id),
+  description: text('description'),
+  money: bigint('money', { mode: 'number' }).notNull().default(0),
+  territoryId: varchar('territory_id', { length: 50 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Faction war logs
+export const factionWars = pgTable('faction_wars', {
+  id: serial('id').primaryKey(),
+  attackerFactionId: integer('attacker_faction_id')
+    .notNull()
+    .references(() => factions.id),
+  defenderFactionId: integer('defender_faction_id')
+    .notNull()
+    .references(() => factions.id),
+  locationId: varchar('location_id', { length: 50 }).notNull(),
+  winnerId: integer('winner_id'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Marketplace listings
+export const marketListings = pgTable('market_listings', {
+  id: serial('id').primaryKey(),
+  sellerId: integer('seller_id')
+    .notNull()
+    .references(() => players.id),
+  itemId: varchar('item_id', { length: 50 }).notNull(),
+  quantity: integer('quantity').notNull().default(1),
+  price: bigint('price', { mode: 'number' }).notNull(),
+  active: boolean('active').notNull().default(true),
+  buyerId: integer('buyer_id'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  soldAt: timestamp('sold_at'),
+})
+
+// Jail logs
+export const jailLogs = pgTable('jail_logs', {
+  id: serial('id').primaryKey(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id),
+  reason: varchar('reason', { length: 100 }).notNull(),
+  duration: integer('duration').notNull(), // seconds
+  reducedBy: integer('reduced_by').notNull().default(0), // seconds reduced by jail activities
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })

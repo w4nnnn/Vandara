@@ -156,7 +156,7 @@ export default function TravelContent({ player }: { player: Player }) {
                                     {currentLoc ? t(`loc.${currentLoc.id}.desc`) : ''}
                                 </p>
                                 {currentLoc?.facilities && (
-                                    <div className="mt-1 flex gap-1.5">
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
                                         {currentLoc.facilities.map((f) => (
                                             <Badge key={f} variant="secondary" className="text-xs">{t(`facility.${f}`)}</Badge>
                                         ))}
@@ -206,7 +206,7 @@ export default function TravelContent({ player }: { player: Player }) {
                                             )}
                                         </div>
                                         <p className="text-sm text-muted-foreground">{t(`loc.${loc.id}.desc`)}</p>
-                                        <div className="flex gap-1.5">
+                                        <div className="flex flex-wrap gap-1.5">
                                             {loc.facilities.map((f) => (
                                                 <Badge key={f} variant="outline" className="text-xs">{t(`facility.${f}`)}</Badge>
                                             ))}
