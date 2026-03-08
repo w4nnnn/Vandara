@@ -17,19 +17,38 @@ real estate empire.
 - **Dual Leveling** — A main character level (XP exponent 1.5) unlocks jobs
   and content, while an independent scavenge level (XP exponent 1.4) unlocks
   better loot tables and recycling recipes.
-- **Battle Stats** — Train Strength, Defense, Speed, and Dexterity through
-  12 gym exercises across 3 intensity tiers.
-- **Education System** — Take courses to permanently boost stats and unlock abilities (First Aid, Martial Arts, Parkour, Meditation, etc.).
-- **Skill Trees** — Unlock permanent passive bonuses in Combat, Stealth, and Trading trees using skill points earned on level up.
+- **8 Core Stats** — Train Strength, Dexterity, Constitution, Intelligence,
+  Wisdom, Charisma, Luck, and Perception through 24 gym exercises organized
+  into 3 categories (Physical, Mental, Special), each with 3 intensity tiers.
+- **Derived Combat Stats** — Base stats feed into 4 derived combat metrics
+  with soft caps: Crit Chance (LCK + DEX, cap 35%), Dodge Chance (DEX + PER,
+  cap 30%), Accuracy (DEX + PER, cap ~98%), and Block Chance (CON + STR,
+  cap 25%).
+- **Resource Pools** — Max Health (CON + STR), Max Energy (CON + WIS),
+  Max Nerve (WIS + PER), and Max Happy (CHA + WIS) scale from your base stats
+  with level-based multipliers.
+- **8 Tiered Synergies** — Combo bonuses activate when two stats reach
+  thresholds (25/50/80), each with 3 progressive tiers:
+  Warrior (STR + CON), Shadow (DEX + LCK), Tank (CON + STR),
+  Scholar (INT + WIS), Survivor (CON + PER), Hustler (CHA + INT),
+  Sentinel (PER + WIS), and Trickster (LCK + CHA).
+- **Education System** — Take courses to permanently boost stats and unlock
+  abilities (First Aid, Martial Arts, Parkour, Meditation, Advanced Combat,
+  and more).
+- **Skill Trees** — Unlock permanent passive bonuses in Combat, Stealth, and
+  Trading trees using skill points earned on level up.
 
 ### Combat & Interaction
 
 - **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs present in all 10 locations. Location matters: gym bros are stronger, downtown folks are richer, and dark alley thugs carry more weapons.
 - **NPC Equipment** — Enemies can probabilistically generate carrying Weapons, Armor, and Accessories, granting them significant hidden stat boosts requiring players to adapt.
 - **Turn-based PvE** — Choose between Attack, Heavy Attack, Defend, or Flee.
-  Combat factors in all four stats for hit chance, damage, and crits.
+  Combat factors in STR, DEX, CON, LCK, and PER for hit chance, damage, crits,
+  and blocking.
 - **Special Moves** — Unlock powerful combat abilities like Power Strike, Leg Sweep, Blade Fury, and Critical Aim as you level up.
-- **Pickpocket System** — Test your DEX and SPD against NPCs to steal their money without fighting. Costs Nerve, rewards cash on success, but immediately triggers severe damage and potential hospitalization if caught!
+- **Pickpocket System** — Test your DEX and PER against NPCs to steal their
+  money without fighting. Costs Nerve, rewards cash on success, but
+  immediately triggers severe damage and potential hospitalization if caught!
 - **Hospitalization** — Lose a fight or get caught pickpocketing with low HP, and you're hospitalized with a recovery timer. All activities are blocked until release.
 
 ### Scavenging & Exploration
@@ -157,7 +176,7 @@ app/
     shop/                   # Location-based trade
     properties/             # Real estate management
     npc/                    # Procedural NPC combat
-    gym/                    # Attribute training (12 exercises)
+    gym/                    # Attribute training (24 exercises, 3 categories)
     hospital/               # Recovery after defeat
     inventory/              # Item management, tool equipping, recycling
     jobs/                   # Career progression
@@ -178,7 +197,8 @@ lib/
     constants/              # Modular game constants
       items.ts              # Item definitions and rarity
       locations.ts          # Locations, travel times, facilities, NPCs
-      gym.ts                # Gym exercises
+      gym.ts                # 24 gym exercises (8 stats, 3 categories)
+      synergies.ts          # 8 tiered stat synergies (3 tiers each)
       jobs.ts               # Job definitions
       scavenge.ts           # Scavenge constants and loot tables
       education.ts          # Education courses
@@ -188,6 +208,8 @@ lib/
       marketplace.ts        # Marketplace constants
       ...
     types.ts                # TypeScript type definitions
+    utils/
+      stats.ts              # Derived stats, soft caps, synergy checks
     npc-generator.ts        # Time-seeded PRNG NPC engine
     regen.ts                # Background stat regeneration
   i18n/
