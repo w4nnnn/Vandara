@@ -13,13 +13,11 @@ import {
     FlameIcon, WrenchIcon, RecycleIcon, ScrollTextIcon, ShieldAlertIcon,
     SparklesIcon, UserIcon, ChevronRightIcon, PackageIcon, ArrowLeftIcon, ArrowRightIcon, MousePointerClickIcon,
 } from 'lucide-react'
-import { scavenge, equipTool } from '@/app/actions/scavenge'
-import { recycle } from '@/app/actions/recycle'
+import { scavenge } from '@/app/actions/scavenge'
 import {
     LOCATIONS, ITEMS, type LocationId,
     getScavengeChances, scavengeXpForLevel,
     SCAVENGE_ENERGY_COST, DOUBLE_ENERGY_COST,
-    SCAVENGE_TOOL_IDS, RECYCLE_RECIPES,
     RARITY_COLORS, RARITY_BG,
     SCAVENGE_SPOTS,
     getStreakBonus,
@@ -218,20 +216,6 @@ export default function ScavengeContent({
         startMiniGame()
     }
 
-    const handleEquipTool = (toolId: string | null) => {
-        startTransition(async () => {
-            await equipTool(toolId)
-            router.refresh()
-        })
-    }
-
-    const handleRecycle = (recipeId: string) => {
-        startTransition(async () => {
-            await recycle(recipeId)
-            router.refresh()
-        })
-    }
-
     const currentLoc = LOCATIONS[player.currentLocation as LocationId]
     const xpNeeded = scavengeXpForLevel(player.scavengeLevel + 1)
     const xpProgress = Math.min((player.scavengeXp / xpNeeded) * 100, 100)
@@ -246,8 +230,6 @@ export default function ScavengeContent({
         [player.currentLocation, player.scavengeLevel]
     )
 
-    // Player's tool items
-    const ownedTools = pItems.filter(pi => SCAVENGE_TOOL_IDS.includes(pi.itemId as typeof SCAVENGE_TOOL_IDS[number]))
     const equippedDef = player.equippedTool ? ITEMS[player.equippedTool] : null
 
     // Inventory map for recipe checking
@@ -320,9 +302,6 @@ export default function ScavengeContent({
                                     <p className="text-sm font-medium">{t(`item.${equippedDef.id}`)}</p>
                                     <RarityBadge rarity={equippedDef.rarity} t={t} />
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => handleEquipTool(null)} disabled={isPending}>
-                                    {t('scavenge.unequipTool')}
-                                </Button>
                             </div>
                         ) : (
                             <p className="text-sm text-muted-foreground">{t('scavenge.noTool')}</p>
@@ -375,9 +354,9 @@ export default function ScavengeContent({
                                                 <button key={idx} onClick={() => handlePickTrash(idx)}
                                                     disabled={isRevealed}
                                                     className={`rounded-xl border-2 p-4 flex flex-col items-center gap-2 transition-all duration-300 ${isRevealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-110' :
-                                                            isRevealed && isPicked && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
-                                                                isRevealed ? 'opacity-40 scale-95' :
-                                                                    'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
+                                                        isRevealed && isPicked && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
+                                                            isRevealed ? 'opacity-40 scale-95' :
+                                                                'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
                                                         }`}>
                                                     <PackageIcon className={`size-8 ${isRevealed && isCorrect ? 'text-green-500' : isRevealed && isPicked ? 'text-red-500' : 'text-muted-foreground'
                                                         }`} />
@@ -404,9 +383,9 @@ export default function ScavengeContent({
                                                 <button key={dir} onClick={() => handleGuessDirection(dir)}
                                                     disabled={revealed}
                                                     className={`rounded-xl border-2 p-6 flex flex-col items-center gap-2 transition-all duration-300 ${revealed && isCorrect ? 'border-green-500 bg-green-500/10 scale-105' :
-                                                            revealed && isChosen && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
-                                                                revealed ? 'opacity-40' :
-                                                                    'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
+                                                        revealed && isChosen && !isCorrect ? 'border-red-500 bg-red-500/10 scale-95' :
+                                                            revealed ? 'opacity-40' :
+                                                                'border-muted hover:border-primary hover:bg-primary/5 cursor-pointer hover:scale-105 active:scale-95'
                                                         }`}>
                                                     {dir === 'left' ? (
                                                         <ArrowLeftIcon className={`size-10 ${revealed && isCorrect ? 'text-green-500' : revealed && isChosen ? 'text-red-500' : 'text-muted-foreground'}`} />
@@ -435,7 +414,7 @@ export default function ScavengeContent({
                                     <button onClick={handleQuickTap}
                                         disabled={miniGameResult !== 'playing'}
                                         className={`w-full rounded-xl border-2 p-8 flex flex-col items-center gap-2 transition-all ${miniGameResult === 'playing' ? 'border-primary bg-primary/5 hover:bg-primary/10 cursor-pointer active:scale-95 active:bg-primary/20' :
-                                                miniGameResult === 'won' ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'
+                                            miniGameResult === 'won' ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'
                                             }`}>
                                         <MousePointerClickIcon className={`size-10 ${miniGameResult === 'playing' ? 'text-primary animate-pulse' : miniGameResult === 'won' ? 'text-green-500' : 'text-red-500'
                                             }`} />
@@ -655,18 +634,10 @@ export default function ScavengeContent({
 
             {/* ── Tabs Section ── */}
             <Tabs defaultValue="chances" className="w-full">
-                <TabsList className="w-full grid grid-cols-4">
+                <TabsList className="w-full grid grid-cols-2">
                     <TabsTrigger value="chances" className="text-xs">
                         <ArchiveIcon className="size-3 mr-1" />
                         Loot
-                    </TabsTrigger>
-                    <TabsTrigger value="tools" className="text-xs">
-                        <WrenchIcon className="size-3 mr-1" />
-                        {t('scavenge.tools')}
-                    </TabsTrigger>
-                    <TabsTrigger value="recycle" className="text-xs">
-                        <RecycleIcon className="size-3 mr-1" />
-                        {t('scavenge.recycling')}
                     </TabsTrigger>
                     <TabsTrigger value="logs" className="text-xs">
                         <ScrollTextIcon className="size-3 mr-1" />
@@ -717,131 +688,6 @@ export default function ScavengeContent({
                     </Card>
                 </TabsContent>
 
-                {/* ── Tools Tab ── */}
-                <TabsContent value="tools">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <WrenchIcon className="size-4 text-blue-500" />
-                                {t('scavenge.tools')}
-                            </CardTitle>
-                            <CardDescription className="text-xs">{t('scavenge.toolsDesc')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {ownedTools.length === 0 ? (
-                                <p className="py-6 text-center text-sm text-muted-foreground">
-                                    {t('scavenge.noTool')}
-                                </p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {ownedTools.map(pi => {
-                                        const def = ITEMS[pi.itemId]
-                                        if (!def) return null
-                                        const isEquipped = player.equippedTool === pi.itemId
-                                        return (
-                                            <div key={pi.id} className={`flex items-center justify-between rounded-lg border p-3 ${isEquipped ? 'border-blue-500/50 bg-blue-500/5' : ''}`}>
-                                                <div className="space-y-0.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <WrenchIcon className="size-4 text-muted-foreground" />
-                                                        <span className="font-medium text-sm">{t(`item.${def.id}`)}</span>
-                                                        <RarityBadge rarity={def.rarity} t={t} />
-                                                        {isEquipped && <Badge className="text-[10px] bg-blue-500">Aktif</Badge>}
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">{t(`item.${def.id}.desc`)}</p>
-                                                    {def.toolEffect && (
-                                                        <div className="flex gap-2 mt-1">
-                                                            {def.toolEffect.nothingReduction && (
-                                                                <Badge variant="outline" className="text-[10px]">-{def.toolEffect.nothingReduction}% Nothing</Badge>
-                                                            )}
-                                                            {def.toolEffect.materialBonus && (
-                                                                <Badge variant="outline" className="text-[10px]">+{def.toolEffect.materialBonus}% Material</Badge>
-                                                            )}
-                                                            {def.toolEffect.moneyBonus && (
-                                                                <Badge variant="outline" className="text-[10px]">x{def.toolEffect.moneyBonus} Money</Badge>
-                                                            )}
-                                                            {def.toolEffect.rareBonus && (
-                                                                <Badge variant="outline" className="text-[10px]">+{def.toolEffect.rareBonus}% Rare</Badge>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={isEquipped ? 'outline' : 'default'}
-                                                    onClick={() => handleEquipTool(isEquipped ? null : pi.itemId)}
-                                                    disabled={isPending}
-                                                >
-                                                    {isEquipped ? t('scavenge.unequipTool') : t('scavenge.equipTool')}
-                                                </Button>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* ── Recycle Tab ── */}
-                <TabsContent value="recycle">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <RecycleIcon className="size-4 text-green-500" />
-                                {t('scavenge.recycling')}
-                            </CardTitle>
-                            <CardDescription className="text-xs">{t('scavenge.recyclingDesc')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                {RECYCLE_RECIPES.map(recipe => {
-                                    const outDef = ITEMS[recipe.output.itemId]
-                                    const locked = player.scavengeLevel < recipe.scavengeLevelRequired
-                                    const hasAll = recipe.inputs.every(inp => (invMap.get(inp.itemId) ?? 0) >= inp.quantity)
-
-                                    return (
-                                        <div key={recipe.id} className={`rounded-lg border p-3 space-y-2 ${locked ? 'opacity-50' : ''}`}>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <ChevronRightIcon className="size-4 text-green-500" />
-                                                    <span className="font-medium text-sm">
-                                                        {recipe.output.quantity > 1 ? `${recipe.output.quantity}x ` : ''}
-                                                        {t(`item.${recipe.output.itemId}`)}
-                                                    </span>
-                                                    {outDef && <RarityBadge rarity={outDef.rarity} t={t} />}
-                                                </div>
-                                                {locked ? (
-                                                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                                                        {t('scavenge.recipeLocked', { level: String(recipe.scavengeLevelRequired) })}
-                                                    </Badge>
-                                                ) : (
-                                                    <Button size="sm" disabled={isPending || !hasAll} onClick={() => handleRecycle(recipe.id)}>
-                                                        {t('scavenge.craft')}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {recipe.inputs.map((inp, i) => {
-                                                    const owned = invMap.get(inp.itemId) ?? 0
-                                                    const enough = owned >= inp.quantity
-                                                    return (
-                                                        <Badge
-                                                            key={i}
-                                                            variant="outline"
-                                                            className={`text-[10px] ${enough ? 'border-green-500/30 text-green-600' : 'border-red-500/30 text-red-500'}`}
-                                                        >
-                                                            {t(`item.${inp.itemId}`)} {owned}/{inp.quantity}
-                                                        </Badge>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
 
                 {/* ── Logs Tab ── */}
                 <TabsContent value="logs">

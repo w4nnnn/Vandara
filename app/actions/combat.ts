@@ -82,7 +82,8 @@ export async function finishCombat(
     won: boolean,
     totalDamageDealt: number,
     totalDamageTaken: number,
-    finalPlayerHealth: number
+    finalPlayerHealth: number,
+    fled: boolean = false
 ) {
     const player = await getPlayer()
     if (!player) return { error: 'Not logged in' }
@@ -152,8 +153,18 @@ export async function finishCombat(
                 updatedAt: new Date(),
             })
             .where(eq(players.id, player.id))
+    } else if (fled) {
+        // Successfully fled — keep player's current HP, no hospitalization
+        const clampedHealth = Math.max(1, Math.min(finalPlayerHealth, player.maxHealth))
+        await db
+            .update(players)
+            .set({
+                health: clampedHealth,
+                updatedAt: new Date(),
+            })
+            .where(eq(players.id, player.id))
     } else {
-        // Defeated → hospitalize
+        // Defeated (HP reached 0) → hospitalize
         hospitalSeconds = enemy.level * 30
         const hospitalUntil = new Date(Date.now() + hospitalSeconds * 1000)
         hospitalized = true

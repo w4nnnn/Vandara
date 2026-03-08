@@ -11,11 +11,12 @@ import {
     HeartIcon, SkullIcon, TrophyIcon, AlertTriangleIcon,
     CoinsIcon, StarIcon, PackageIcon, HeartPulseIcon,
     ShieldCheckIcon, FootprintsIcon, MessageCircleIcon,
-    UsersIcon, ArrowLeftIcon, ActivityIcon, PartyPopperIcon
+    UsersIcon, ArrowLeftIcon, ActivityIcon, PartyPopperIcon,
+    WrenchIcon, GemIcon,
 } from 'lucide-react'
-// Trigger HMR
 import { useEffect } from 'react'
 import { getActiveNpcs, type ActiveNpc } from '@/lib/game/npc-generator'
+import { ITEMS, RARITY_COLORS } from '@/lib/game/constants'
 import AvatarComponent from '@/lib/avataaars'
 import { useCombat } from './use-combat'
 import { useTranslation } from '@/lib/i18n'
@@ -248,6 +249,29 @@ export default function CombatContent({ player }: { player: Player }) {
                                                         Reset: {minutes}m {seconds}s
                                                     </Badge>
                                                 </div>
+                                                {/* Equipment badges */}
+                                                {(npc.equipment.weapon || npc.equipment.armor || npc.equipment.accessory) && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {npc.equipment.weapon && (
+                                                            <Badge variant="outline" className="text-[10px] text-red-500 border-red-500/30 bg-red-500/5">
+                                                                <SwordsIcon className="size-2.5 mr-1" />
+                                                                {ITEMS[npc.equipment.weapon]?.label ?? npc.equipment.weapon}
+                                                            </Badge>
+                                                        )}
+                                                        {npc.equipment.armor && (
+                                                            <Badge variant="outline" className="text-[10px] text-blue-500 border-blue-500/30 bg-blue-500/5">
+                                                                <ShieldIcon className="size-2.5 mr-1" />
+                                                                {ITEMS[npc.equipment.armor]?.label ?? npc.equipment.armor}
+                                                            </Badge>
+                                                        )}
+                                                        {npc.equipment.accessory && (
+                                                            <Badge variant="outline" className="text-[10px] text-purple-500 border-purple-500/30 bg-purple-500/5">
+                                                                <GemIcon className="size-2.5 mr-1" />
+                                                                {ITEMS[npc.equipment.accessory]?.label ?? npc.equipment.accessory}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 <p className="text-sm text-muted-foreground">{npc.description}</p>
                                             </div>
                                         </div>
@@ -306,6 +330,45 @@ export default function CombatContent({ player }: { player: Player }) {
                             <span className="flex items-center gap-1 text-blue-600"><StarIcon className="h-4 w-4" /> {selectedNpc.xpDrop} XP</span>
                             <span className="flex items-center gap-1 text-orange-600"><ActivityIcon className="h-4 w-4" /> {selectedNpc.nerveCost} nerve</span>
                         </div>
+
+                        {/* Equipment section */}
+                        {(selectedNpc.equipment.weapon || selectedNpc.equipment.armor || selectedNpc.equipment.accessory) && (
+                            <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                                <p className="text-xs font-semibold text-muted-foreground">PERLENGKAPAN</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedNpc.equipment.weapon && (() => {
+                                        const def = ITEMS[selectedNpc.equipment.weapon!]
+                                        return (
+                                            <div className="flex items-center gap-1.5">
+                                                <SwordsIcon className="size-3.5 text-red-500" />
+                                                <span className="text-xs font-medium">{def?.label ?? selectedNpc.equipment.weapon}</span>
+                                                {def && <Badge variant="outline" className={`text-[9px] ${RARITY_COLORS[def.rarity]}`}>{def.rarity}</Badge>}
+                                            </div>
+                                        )
+                                    })()}
+                                    {selectedNpc.equipment.armor && (() => {
+                                        const def = ITEMS[selectedNpc.equipment.armor!]
+                                        return (
+                                            <div className="flex items-center gap-1.5">
+                                                <ShieldIcon className="size-3.5 text-blue-500" />
+                                                <span className="text-xs font-medium">{def?.label ?? selectedNpc.equipment.armor}</span>
+                                                {def && <Badge variant="outline" className={`text-[9px] ${RARITY_COLORS[def.rarity]}`}>{def.rarity}</Badge>}
+                                            </div>
+                                        )
+                                    })()}
+                                    {selectedNpc.equipment.accessory && (() => {
+                                        const def = ITEMS[selectedNpc.equipment.accessory!]
+                                        return (
+                                            <div className="flex items-center gap-1.5">
+                                                <GemIcon className="size-3.5 text-purple-500" />
+                                                <span className="text-xs font-medium">{def?.label ?? selectedNpc.equipment.accessory}</span>
+                                                {def && <Badge variant="outline" className={`text-[9px] ${RARITY_COLORS[def.rarity]}`}>{def.rarity}</Badge>}
+                                            </div>
+                                        )
+                                    })()}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Action buttons */}
                         <div className="grid grid-cols-2 gap-3">
@@ -604,6 +667,7 @@ export default function CombatContent({ player }: { player: Player }) {
                                     <AlertTitle>{t('npc.hospitalized')}</AlertTitle>
                                     <AlertDescription>
                                         {t('npc.hospitalizedDesc', { seconds: String(result.hospitalSeconds) })}
+                                        <p className="mt-1 text-xs opacity-80">Mengalihkan ke rumah sakit dalam 2.5 detik...</p>
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -633,7 +697,11 @@ export default function CombatContent({ player }: { player: Player }) {
                         </details>
                     )}
 
-                    <Button onClick={handleBackToNpcs} className="w-full">
+                    <Button
+                        onClick={() => result.hospitalized ? router.push('/hospital') : handleBackToNpcs()}
+                        className="w-full"
+                        variant={result.hospitalized ? 'destructive' : 'default'}
+                    >
                         {result.hospitalized ? t('npc.toHospital') : t('npc.backToNpc')}
                     </Button>
                 </>

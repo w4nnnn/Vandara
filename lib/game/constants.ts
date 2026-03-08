@@ -898,9 +898,9 @@ export function getSkillBonuses(unlockedSkillIds: string[]): SkillDef['bonus'] {
 
 // ─── EQUIPMENT ───────────────────────────────────────────────────
 
-export type EquipmentSlot = 'weapon' | 'armor' | 'accessory'
+export type EquipmentSlot = 'weapon' | 'armor' | 'accessory' | 'tool'
 
-export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['weapon', 'armor', 'accessory']
+export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['weapon', 'armor', 'accessory', 'tool']
 
 export interface CombatBonus {
   attack?: number

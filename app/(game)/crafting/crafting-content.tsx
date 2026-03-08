@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { HammerIcon, SwordIcon, ShieldIcon, FlaskConicalIcon, WrenchIcon } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { HammerIcon, SwordIcon, ShieldIcon, FlaskConicalIcon, WrenchIcon, RecycleIcon, ChevronRightIcon } from 'lucide-react'
 import { craftItem } from '@/app/actions/crafting'
-import { CRAFTING_RECIPES, ITEMS, RARITY_COLORS, RARITY_BG } from '@/lib/game/constants'
+import { recycle } from '@/app/actions/recycle'
+import { CRAFTING_RECIPES, RECYCLE_RECIPES, ITEMS, RARITY_COLORS, RARITY_BG } from '@/lib/game/constants'
+import { useTranslation } from '@/lib/i18n'
 
 type PlayerItem = { id: number; itemId: string; quantity: number }
 
@@ -17,6 +20,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 
 export default function CraftingContent({ player, playerItems }: { player: any; playerItems: PlayerItem[] }) {
     const router = useRouter()
+    const { t } = useTranslation()
     const [isPending, startTransition] = useTransition()
     const [result, setResult] = useState<string | null>(null)
 
@@ -35,85 +39,182 @@ export default function CraftingContent({ player, playerItems }: { player: any; 
         })
     }
 
+    const handleRecycle = (recipeId: string) => {
+        setResult(null)
+        startTransition(async () => {
+            const res = await recycle(recipeId)
+            if (res.error) setResult(res.error)
+            else {
+                const def = ITEMS[res.outputItemId!]
+                setResult(`Berhasil mendaur ulang! Dapat: ${res.outputQuantity}x ${def?.label ?? res.outputItemId}`)
+            }
+            router.refresh()
+        })
+    }
+
     return (
         <div className="space-y-6">
-            <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent" />
-                <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-2">
-                        <HammerIcon className="size-5 text-orange-500" />
+            <Tabs defaultValue="crafting" className="w-full">
+                <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="crafting" className="text-xs">
+                        <HammerIcon className="size-4 mr-2" />
                         Crafting
-                    </CardTitle>
-                    <CardDescription>Gabungkan material untuk membuat senjata, armor, dan konsumabel.</CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-3">
-                    {result && (
-                        <div className={`text-sm text-center p-2 rounded-lg ${result.includes('Berhasil') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                            {result}
-                        </div>
-                    )}
+                    </TabsTrigger>
+                    <TabsTrigger value="recycle" className="text-xs">
+                        <RecycleIcon className="size-4 mr-2" />
+                        Daur Ulang
+                    </TabsTrigger>
+                </TabsList>
 
-                    {CRAFTING_RECIPES.map(recipe => {
-                        const outDef = ITEMS[recipe.output.itemId]
-                        const CatIcon = CATEGORY_ICONS[recipe.category] ?? HammerIcon
-                        const locked = player.level < recipe.levelRequired || player.scavengeLevel < recipe.scavengeLevelRequired
-                        const hasAll = recipe.inputs.every(inp => (invMap.get(inp.itemId) ?? 0) >= inp.quantity)
+                <TabsContent value="crafting">
+                    <Card className="relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent" />
+                        <CardHeader className="relative">
+                            <CardTitle className="flex items-center gap-2">
+                                <HammerIcon className="size-5 text-orange-500" />
+                                Crafting
+                            </CardTitle>
+                            <CardDescription>Gabungkan material untuk membuat pelengkapan dan konsumabel.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="relative space-y-3">
+                            {result && (
+                                <div className={`text-sm text-center p-2 rounded-lg ${result.includes('Berhasil') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {result}
+                                </div>
+                            )}
 
-                        return (
-                            <div key={recipe.id} className={`rounded-lg border p-4 space-y-3 ${locked ? 'opacity-50' : ''}`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <CatIcon className="size-4 text-orange-500" />
-                                        <span className="font-semibold text-sm">
-                                            {recipe.output.quantity > 1 ? `${recipe.output.quantity}x ` : ''}
-                                            {outDef?.label ?? recipe.output.itemId}
-                                        </span>
-                                        {outDef && (
-                                            <Badge variant="outline" className={`text-[10px] ${RARITY_COLORS[outDef.rarity]}`}>
-                                                {outDef.rarity}
-                                            </Badge>
+                            {CRAFTING_RECIPES.map(recipe => {
+                                const outDef = ITEMS[recipe.output.itemId]
+                                const CatIcon = CATEGORY_ICONS[recipe.category] ?? HammerIcon
+                                const locked = player.level < recipe.levelRequired || player.scavengeLevel < recipe.scavengeLevelRequired
+                                const hasAll = recipe.inputs.every(inp => (invMap.get(inp.itemId) ?? 0) >= inp.quantity)
+
+                                return (
+                                    <div key={recipe.id} className={`rounded-lg border p-4 space-y-3 ${locked ? 'opacity-50' : ''}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <CatIcon className="size-4 text-orange-500" />
+                                                <span className="font-semibold text-sm">
+                                                    {recipe.output.quantity > 1 ? `${recipe.output.quantity}x ` : ''}
+                                                    {outDef?.label ?? recipe.output.itemId}
+                                                </span>
+                                                {outDef && (
+                                                    <Badge variant="outline" className={`text-[10px] ${RARITY_COLORS[outDef.rarity]}`}>
+                                                        {outDef.rarity}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {locked ? (
+                                                <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                                                    Lv.{recipe.levelRequired} / Scav.{recipe.scavengeLevelRequired}
+                                                </Badge>
+                                            ) : (
+                                                <Button size="sm" disabled={isPending || !hasAll} onClick={() => handleCraft(recipe.id)}>
+                                                    <HammerIcon className="size-3 mr-1" /> Craft
+                                                </Button>
+                                            )}
+                                        </div>
+                                        {outDef?.description && (
+                                            <p className="text-xs text-muted-foreground">{outDef.description}</p>
                                         )}
+                                        {outDef?.combatBonus && (
+                                            <div className="flex gap-1.5 flex-wrap">
+                                                {outDef.combatBonus.attack && <Badge variant="outline" className="text-[10px] text-red-500">+{outDef.combatBonus.attack} ATK</Badge>}
+                                                {outDef.combatBonus.defense && <Badge variant="outline" className="text-[10px] text-blue-500">+{outDef.combatBonus.defense} DEF</Badge>}
+                                                {outDef.combatBonus.speed && <Badge variant="outline" className="text-[10px] text-green-500">+{outDef.combatBonus.speed} SPD</Badge>}
+                                                {outDef.combatBonus.dexterity && <Badge variant="outline" className="text-[10px] text-purple-500">+{outDef.combatBonus.dexterity} DEX</Badge>}
+                                                {outDef.combatBonus.maxHp && <Badge variant="outline" className="text-[10px] text-pink-500">+{outDef.combatBonus.maxHp} HP</Badge>}
+                                            </div>
+                                        )}
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {recipe.inputs.map((inp, i) => {
+                                                const owned = invMap.get(inp.itemId) ?? 0
+                                                const enough = owned >= inp.quantity
+                                                const inputDef = ITEMS[inp.itemId]
+                                                return (
+                                                    <Badge key={i} variant="outline"
+                                                        className={`text-[10px] ${enough ? 'border-green-500/30 text-green-600' : 'border-red-500/30 text-red-500'}`}>
+                                                        {inputDef?.label ?? inp.itemId} {owned}/{inp.quantity}
+                                                    </Badge>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                    {locked ? (
-                                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                                            Lv.{recipe.levelRequired} / Scav.{recipe.scavengeLevelRequired}
-                                        </Badge>
-                                    ) : (
-                                        <Button size="sm" disabled={isPending || !hasAll} onClick={() => handleCraft(recipe.id)}>
-                                            <HammerIcon className="size-3 mr-1" /> Craft
-                                        </Button>
-                                    )}
+                                )
+                            })}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="recycle">
+                    <Card className="relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent" />
+                        <CardHeader className="relative">
+                            <CardTitle className="flex items-center gap-2">
+                                <RecycleIcon className="size-5 text-green-500" />
+                                Daur Ulang
+                            </CardTitle>
+                            <CardDescription>Ubah sampah hasil pulungan menjadi material berguna.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="relative space-y-3">
+                            {result && (
+                                <div className={`text-sm text-center p-2 rounded-lg ${result.includes('Berhasil') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {result}
                                 </div>
-                                {outDef?.description && (
-                                    <p className="text-xs text-muted-foreground">{outDef.description}</p>
-                                )}
-                                {outDef?.combatBonus && (
-                                    <div className="flex gap-1.5 flex-wrap">
-                                        {outDef.combatBonus.attack && <Badge variant="outline" className="text-[10px] text-red-500">+{outDef.combatBonus.attack} ATK</Badge>}
-                                        {outDef.combatBonus.defense && <Badge variant="outline" className="text-[10px] text-blue-500">+{outDef.combatBonus.defense} DEF</Badge>}
-                                        {outDef.combatBonus.speed && <Badge variant="outline" className="text-[10px] text-green-500">+{outDef.combatBonus.speed} SPD</Badge>}
-                                        {outDef.combatBonus.dexterity && <Badge variant="outline" className="text-[10px] text-purple-500">+{outDef.combatBonus.dexterity} DEX</Badge>}
-                                        {outDef.combatBonus.maxHp && <Badge variant="outline" className="text-[10px] text-pink-500">+{outDef.combatBonus.maxHp} HP</Badge>}
+                            )}
+
+                            {RECYCLE_RECIPES.map(recipe => {
+                                const outDef = ITEMS[recipe.output.itemId]
+                                const locked = player.scavengeLevel < recipe.scavengeLevelRequired
+                                const hasAll = recipe.inputs.every(inp => (invMap.get(inp.itemId) ?? 0) >= inp.quantity)
+
+                                return (
+                                    <div key={recipe.id} className={`rounded-lg border p-4 space-y-3 ${locked ? 'opacity-50' : ''}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <ChevronRightIcon className="size-4 text-green-500" />
+                                                <span className="font-semibold text-sm">
+                                                    {recipe.output.quantity > 1 ? `${recipe.output.quantity}x ` : ''}
+                                                    {t(`item.${recipe.output.itemId}`)}
+                                                </span>
+                                                {outDef && (
+                                                    <Badge variant="outline" className={`text-[10px] ${RARITY_COLORS[outDef.rarity]}`}>
+                                                        {outDef.rarity}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {locked ? (
+                                                <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                                                    Scav.{recipe.scavengeLevelRequired}
+                                                </Badge>
+                                            ) : (
+                                                <Button size="sm" variant="outline" disabled={isPending || !hasAll} onClick={() => handleRecycle(recipe.id)}>
+                                                    Daur
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {recipe.inputs.map((inp, i) => {
+                                                const owned = invMap.get(inp.itemId) ?? 0
+                                                const enough = owned >= inp.quantity
+                                                return (
+                                                    <Badge
+                                                        key={i}
+                                                        variant="outline"
+                                                        className={`text-[10px] ${enough ? 'border-green-500/30 text-green-600' : 'border-red-500/30 text-red-500'}`}
+                                                    >
+                                                        {t(`item.${inp.itemId}`)} {owned}/{inp.quantity}
+                                                    </Badge>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                )}
-                                <div className="flex flex-wrap gap-1.5">
-                                    {recipe.inputs.map((inp, i) => {
-                                        const owned = invMap.get(inp.itemId) ?? 0
-                                        const enough = owned >= inp.quantity
-                                        const inputDef = ITEMS[inp.itemId]
-                                        return (
-                                            <Badge key={i} variant="outline"
-                                                className={`text-[10px] ${enough ? 'border-green-500/30 text-green-600' : 'border-red-500/30 text-red-500'}`}>
-                                                {inputDef?.label ?? inp.itemId} {owned}/{inp.quantity}
-                                            </Badge>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        )
-                    })}
-                </CardContent>
-            </Card>
+                                )
+                            })}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

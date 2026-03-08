@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { SwordIcon, ShieldIcon, GemIcon, XIcon } from 'lucide-react'
+import { SwordIcon, ShieldIcon, GemIcon, XIcon, WrenchIcon } from 'lucide-react'
 import { equipItem, unequipItem } from '@/app/actions/equipment'
 import { ITEMS, type EquipmentSlot, RARITY_COLORS, RARITY_BG } from '@/lib/game/constants'
 
@@ -15,6 +15,7 @@ const SLOT_INFO: Record<EquipmentSlot, { label: string; icon: React.ElementType;
     weapon: { label: 'Senjata', icon: SwordIcon, color: 'text-red-500' },
     armor: { label: 'Armor', icon: ShieldIcon, color: 'text-blue-500' },
     accessory: { label: 'Aksesoris', icon: GemIcon, color: 'text-purple-500' },
+    tool: { label: 'Alat', icon: WrenchIcon, color: 'text-orange-500' },
 }
 
 export default function EquipmentContent({ player, playerItems }: { player: any; playerItems: PlayerItem[] }) {
@@ -32,18 +33,19 @@ export default function EquipmentContent({ player, playerItems }: { player: any;
         weapon: player.equippedWeapon,
         armor: player.equippedArmor,
         accessory: player.equippedAccessory,
+        tool: player.equippedTool,
     }
 
     const equipmentItems = playerItems.filter(pi => {
         const def = ITEMS[pi.itemId]
-        return def && ['weapon', 'armor', 'accessory'].includes(def.category)
+        return def && ['weapon', 'armor', 'accessory', 'tool'].includes(def.category)
     })
 
     return (
         <div className="space-y-6">
             {/* Equipped Slots */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(['weapon', 'armor', 'accessory'] as EquipmentSlot[]).map(slot => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(['weapon', 'armor', 'accessory', 'tool'] as EquipmentSlot[]).map(slot => {
                     const info = SLOT_INFO[slot]
                     const Icon = info.icon
                     const equippedId = equipped[slot]
@@ -77,6 +79,14 @@ export default function EquipmentContent({ player, playerItems }: { player: any;
                                                 {def.combatBonus.speed && <Badge variant="outline" className="text-[10px] text-green-500">+{def.combatBonus.speed} SPD</Badge>}
                                                 {def.combatBonus.dexterity && <Badge variant="outline" className="text-[10px] text-purple-500">+{def.combatBonus.dexterity} DEX</Badge>}
                                                 {def.combatBonus.maxHp && <Badge variant="outline" className="text-[10px] text-pink-500">+{def.combatBonus.maxHp} HP</Badge>}
+                                            </div>
+                                        )}
+                                        {def.toolEffect && (
+                                            <div className="flex gap-1 flex-wrap mt-1">
+                                                {def.toolEffect.nothingReduction && <Badge variant="outline" className="text-[10px] bg-orange-500/10 text-orange-500 border-orange-500/20">-{def.toolEffect.nothingReduction}% Kosong</Badge>}
+                                                {def.toolEffect.materialBonus && <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">+{def.toolEffect.materialBonus}% Material</Badge>}
+                                                {def.toolEffect.moneyBonus && <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-500 border-yellow-500/20">x{def.toolEffect.moneyBonus} Uang</Badge>}
+                                                {def.toolEffect.rareBonus && <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-500 border-indigo-500/20">+{def.toolEffect.rareBonus}% Rare</Badge>}
                                             </div>
                                         )}
                                     </div>
@@ -121,6 +131,14 @@ export default function EquipmentContent({ player, playerItems }: { player: any;
                                                     {def.combatBonus.attack && <Badge variant="outline" className="text-[10px] text-red-500">+{def.combatBonus.attack} ATK</Badge>}
                                                     {def.combatBonus.defense && <Badge variant="outline" className="text-[10px] text-blue-500">+{def.combatBonus.defense} DEF</Badge>}
                                                     {def.combatBonus.speed && <Badge variant="outline" className="text-[10px] text-green-500">+{def.combatBonus.speed} SPD</Badge>}
+                                                </div>
+                                            )}
+                                            {def.toolEffect && (
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {def.toolEffect.nothingReduction && <Badge variant="outline" className="text-[10px] bg-orange-500/10 text-orange-500 border-orange-500/20">-{def.toolEffect.nothingReduction}% Kosong</Badge>}
+                                                    {def.toolEffect.materialBonus && <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">+{def.toolEffect.materialBonus}% Material</Badge>}
+                                                    {def.toolEffect.moneyBonus && <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-500 border-yellow-500/20">x{def.toolEffect.moneyBonus} Uang</Badge>}
+                                                    {def.toolEffect.rareBonus && <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-500 border-indigo-500/20">+{def.toolEffect.rareBonus}% Rare</Badge>}
                                                 </div>
                                             )}
                                         </div>

@@ -1,4 +1,4 @@
-import { AVATAR_OPTIONS } from './constants'
+import { AVATAR_OPTIONS, ITEMS } from './constants'
 
 /**
  * Deterministic pseudo-random number generator (Mulberry32)
@@ -63,7 +63,44 @@ const FAREWELLS = [
     'Gue pergi dulu. Ingat muka gue.',
 ]
 
+// ─── Equipment Pool ──────────────────────────────────────────────────
+
+/** Equippable items available to NPCs, ordered common → epic */
+const NPC_WEAPON_POOL = ['pipe_wrench', 'combat_knife', 'taser'] as const
+const NPC_ARMOR_POOL = ['leather_jacket', 'kevlar_vest'] as const
+const NPC_ACCESSORY_POOL = ['lucky_charm', 'gold_ring'] as const
+
+/**
+ * Weighted pick based on NPC level.
+ * Low-level NPC → biased toward first (weaker) items.
+ * High-level NPC → can pick any item including epic.
+ */
+function pickEquipmentByLevel<T extends string>(
+    pool: readonly T[],
+    prng: () => number,
+    npcLevel: number
+): T {
+    const levelFactor = Math.min(npcLevel / 12, 1) // 0..1
+    const weights = pool.map((_, i) => {
+        const rarity = i / (pool.length - 1 || 1)
+        return Math.max(0.05, rarity <= levelFactor ? 1 : (1 - rarity) * (1 - levelFactor) + 0.1)
+    })
+    const totalWeight = weights.reduce((a, b) => a + b, 0)
+    let r = prng() * totalWeight
+    for (let k = 0; k < pool.length; k++) {
+        r -= weights[k]
+        if (r <= 0) return pool[k]
+    }
+    return pool[pool.length - 1]
+}
+
 // ─── Interfaces ─────────────────────────────────────────────────────
+
+export type NpcEquipment = {
+    weapon?: string
+    armor?: string
+    accessory?: string
+}
 
 export type GeneratedNpc = {
     id: string
@@ -79,6 +116,8 @@ export type GeneratedNpc = {
     moneyDrop: [number, number]
     xpDrop: number
     itemDrops?: { itemId: string; chance: number }[]
+    /** Equipment the NPC is carrying — already applied to stats */
+    equipment: NpcEquipment
     dialogue: {
         greeting: string
         lines: { npc: string; replies: string[] }[]
@@ -95,7 +134,6 @@ export type ActiveNpc = GeneratedNpc & { nextRotationTime: number }
  * Generates the current array of active NPCs.
  * Each NPC "slot" has its own independent rotation timer.
  * The number of slots changes every hour.
- * (Forcing Turbopack to recompile)
  */
 export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
     const npcs: ActiveNpc[] = []
@@ -118,38 +156,88 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
         const nextRotationTime = (currentSlotInterval + 1) * slotDurationMs
 
         // Seed for this specific NPC at this specific time interval
-        // Incorporate both the interval step and the slot index
         const slotSeed = currentSlotInterval * 1000 + i
         const prng = mulberry32(slotSeed)
 
-        // Generate base attributes
+        // Generate basic identity
         const firstName = pickRandom(FIRST_NAMES, prng)
         const lastName = pickRandom(LAST_NAMES, prng)
         const label = `${firstName} ${lastName}`
 
-        // Level fluctuates around player level (from playerLevel - 2 up to playerLevel + 5)
         let npcLevel = playerLevel + Math.floor(prng() * 8) - 2
         if (npcLevel < 1) npcLevel = 1
 
         const id = `npc_${slotSeed}`
 
-        // Calculate stats based on level
-        // A base stat pool that scales with level
+        // ─── Equipment Generation ─────────────────────────────────────
+        // Chance scales with level: Lv1 → 20/15/10%, Lv15+ → 75/60/45%
+        const clampedLevel = Math.min(npcLevel, 15)
+        const weaponChance = 0.20 + (clampedLevel / 15) * 0.55
+        const armorChance = 0.15 + (clampedLevel / 15) * 0.45
+        const accessoryChance = 0.10 + (clampedLevel / 15) * 0.35
+
+        const equipment: NpcEquipment = {}
+        let equipAttack = 0, equipDefense = 0, equipSpeed = 0, equipDex = 0, equipHp = 0
+
+        if (prng() < weaponChance) {
+            const itemId = pickEquipmentByLevel(NPC_WEAPON_POOL, prng, npcLevel)
+            equipment.weapon = itemId
+            const bonus = ITEMS[itemId]?.combatBonus
+            if (bonus) {
+                equipAttack += bonus.attack ?? 0
+                equipDefense += bonus.defense ?? 0
+                equipSpeed += bonus.speed ?? 0
+                equipDex += bonus.dexterity ?? 0
+                equipHp += bonus.maxHp ?? 0
+            }
+        }
+
+        if (prng() < armorChance) {
+            const itemId = pickEquipmentByLevel(NPC_ARMOR_POOL, prng, npcLevel)
+            equipment.armor = itemId
+            const bonus = ITEMS[itemId]?.combatBonus
+            if (bonus) {
+                equipAttack += bonus.attack ?? 0
+                equipDefense += bonus.defense ?? 0
+                equipSpeed += bonus.speed ?? 0
+                equipDex += bonus.dexterity ?? 0
+                equipHp += bonus.maxHp ?? 0
+            }
+        }
+
+        if (prng() < accessoryChance) {
+            const itemId = pickEquipmentByLevel(NPC_ACCESSORY_POOL, prng, npcLevel)
+            equipment.accessory = itemId
+            const bonus = ITEMS[itemId]?.combatBonus
+            if (bonus) {
+                equipAttack += bonus.attack ?? 0
+                equipDefense += bonus.defense ?? 0
+                equipSpeed += bonus.speed ?? 0
+                equipDex += bonus.dexterity ?? 0
+                equipHp += bonus.maxHp ?? 0
+            }
+        }
+
+        // ─── Base Stats ───────────────────────────────────────────────
         const baseStatPool = npcLevel * 5 + 10
 
-        // Distribute randomly but ensure at least 1 in each
         let str = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let def = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let spd = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let dex = 1 + Math.floor(prng() * (baseStatPool * 0.4))
 
-        // Ensure they scale realistically
         str += Math.floor(npcLevel * 1.5)
         def += Math.floor(npcLevel * 1.2)
         spd += Math.floor(npcLevel * 1.3)
         dex += Math.floor(npcLevel * 1.0)
 
-        const maxHealth = 15 + (npcLevel * 8) + (def * 2)
+        // Apply equipment bonuses
+        str += equipAttack
+        def += equipDefense
+        spd += equipSpeed
+        dex += equipDex
+
+        const maxHealth = 15 + (npcLevel * 8) + (def * 2) + equipHp
 
         // Generate Avatar
         const avatar: Record<string, string> = {}
@@ -157,16 +245,15 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
             avatar[key] = pickRandom(options, prng)
         }
 
-        // Determine rewards & cost
+        // Rewards & cost
         const nerveCost = Math.max(2, Math.min(10, Math.floor(npcLevel / 3) + 2))
         const minMoney = npcLevel * 5 + Math.floor(prng() * 20)
         const maxMoney = minMoney + npcLevel * 10 + Math.floor(prng() * 50)
         const xpDrop = npcLevel * 4 + Math.floor(prng() * 10)
 
         // Dialogue
-        const linesCount = 1 + Math.floor(prng() * 3) // 1 to 3 lines
+        const linesCount = 1 + Math.floor(prng() * 3)
         const lines = []
-        // copy array to pick without replacement
         const availableChatLines = [...CHAT_LINES]
         for (let j = 0; j < linesCount; j++) {
             if (availableChatLines.length === 0) break
@@ -188,7 +275,8 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
             nerveCost,
             moneyDrop: [minMoney, maxMoney],
             xpDrop,
-            itemDrops: prng() > 0.7 ? [{ itemId: 'scrap_metal', chance: 0.5 }] : [], // 30% chance to have a drop
+            itemDrops: prng() > 0.7 ? [{ itemId: 'scrap_metal', chance: 0.5 }] : [],
+            equipment,
             dialogue: {
                 greeting: pickRandom(GREETINGS, prng),
                 lines,
@@ -199,6 +287,5 @@ export function getActiveNpcs(playerLevel: number): ActiveNpc[] {
         })
     }
 
-    // Sort by level ascending
     return npcs.sort((a, b) => a.level - b.level)
 }

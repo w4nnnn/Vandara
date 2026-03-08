@@ -25,6 +25,7 @@ export async function equipItem(itemId: string) {
     if (slot === 'weapon') updateData.equippedWeapon = itemId
     else if (slot === 'armor') updateData.equippedArmor = itemId
     else if (slot === 'accessory') updateData.equippedAccessory = itemId
+    else if (slot === 'tool') updateData.equippedTool = itemId
 
     await db.update(players).set(updateData).where(eq(players.id, player.id))
     return { success: true, slot, itemId }
@@ -39,6 +40,7 @@ export async function unequipItem(slot: EquipmentSlot) {
     if (slot === 'weapon') updateData.equippedWeapon = null
     else if (slot === 'armor') updateData.equippedArmor = null
     else if (slot === 'accessory') updateData.equippedAccessory = null
+    else if (slot === 'tool') updateData.equippedTool = null
 
     await db.update(players).set(updateData).where(eq(players.id, player.id))
     return { success: true, slot }

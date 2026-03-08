@@ -182,7 +182,8 @@ export function useCombat(
             const totalDealt = turnLog.reduce((s, t) => s + t.playerDamage, 0) + playerDmg
             const totalTaken = turnLog.reduce((s, t) => s + t.enemyDamage, 0) + enemyDmg
             startTransition(async () => {
-                await finishCombat(enemyId, false, totalDealt, totalTaken, Math.max(0, newPlayerHP))
+                const res = await finishCombat(enemyId, false, totalDealt, totalTaken, Math.max(1, newPlayerHP), true)
+                if ('error' in res) { onError(res.error ?? t('combat.error')); return }
                 setResult({
                     won: false,
                     moneyEarned: 0,
@@ -190,8 +191,8 @@ export function useCombat(
                     leveledUp: false,
                     newLevel: playerLevel,
                     itemsDropped: [],
-                    hospitalized: false,
-                    hospitalSeconds: 0,
+                    hospitalized: res.hospitalized,
+                    hospitalSeconds: res.hospitalSeconds,
                 })
                 onPhaseChange('result')
                 router.refresh()
@@ -219,6 +220,10 @@ export function useCombat(
                 })
                 onPhaseChange('result')
                 router.refresh()
+                // Auto-redirect to hospital if player was defeated
+                if (res.hospitalized) {
+                    setTimeout(() => router.push('/hospital'), 2500)
+                }
             })
         }
     }, [playerHP, enemyHP, playerStats, enemyStats, enemyId, round, turnLog, isDefending, playerLevel, router, onError, onPhaseChange, t])
