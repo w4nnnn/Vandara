@@ -14,7 +14,12 @@ import {
     BriefcaseIcon,
     MapPinIcon,
     HospitalIcon,
+    FactoryIcon,
+    SparklesIcon,
+    NavigationIcon,
+    AlertTriangleIcon,
 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { LOCATIONS, type LocationId } from '@/lib/game/constants'
 import type { Locale } from '@/lib/i18n'
 import type { LucideIcon } from 'lucide-react'
@@ -25,6 +30,11 @@ const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
     business_district: BriefcaseIcon,
     dark_alley: MapPinIcon,
     hospital: HospitalIcon,
+    port_docks: PlaneIcon,
+    university_district: SparklesIcon,
+    industrial_zone: FactoryIcon,
+    waterfront: NavigationIcon,
+    underground: AlertTriangleIcon,
 }
 
 // ─── Compact HUD Stat Bar ────────────────────────────────────────
@@ -44,18 +54,28 @@ function HudStat({
 }) {
     const pct = Math.max(0, Math.min(100, Math.round((current / max) * 100)))
     return (
-        <div className="flex items-center gap-1.5 min-w-0" title={`${label}: ${current}/${max}`} aria-label={`${label}: ${current}/${max}`}>
-            <Icon className={`size-3.5 shrink-0 ${color}`} />
-            <div className="relative h-2 w-12 sm:w-16 overflow-hidden rounded-full bg-white/10">
-                <div
-                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-linear ${color.replace('text-', 'bg-')}`}
-                    style={{ width: `${pct}%` }}
-                />
-            </div>
-            <span className="text-[10px] tabular-nums text-white/60 hidden sm:inline">
-                {current}
-            </span>
-        </div>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 min-w-0 cursor-help">
+                    <Icon className={`size-3.5 shrink-0 ${color}`} />
+                    <div className="relative h-2 w-12 sm:w-16 overflow-hidden rounded-full bg-white/10">
+                        <div
+                            className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-linear ${color.replace('text-', 'bg-')}`}
+                            style={{ width: `${pct}%` }}
+                        />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-white/60 hidden sm:inline">
+                        {current}
+                    </span>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="border-white/10 bg-zinc-800/95 text-white">
+                <p className="font-semibold">{label}</p>
+                <p className="text-xs text-white/70 mt-0.5">
+                    {current} / {max} ({pct}%)
+                </p>
+            </TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -89,24 +109,39 @@ export function TopHud({
     t,
 }: TopHudProps) {
     return (
-        <header className="sticky top-0 z-50 border-b bg-zinc-900 text-white">
-            <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-3 py-2">
+        <header className="sticky top-0 z-50 border-b border-white/5 bg-zinc-900/80 backdrop-blur-xl text-white shadow-lg">
+            <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-3 py-2.5">
                 {/* Left: Location */}
-                <Link
-                    href="/travel"
-                    className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-white/10 transition-colors shrink-0"
-                >
-                    {isTraveling ? (
-                        <span className="flex items-center gap-1 text-primary font-bold animate-pulse">
-                            <PlaneIcon className="size-3.5" /> {Math.ceil(travelCountdown / 1000)}s
-                        </span>
-                    ) : (
-                        <span className="flex items-center gap-1.5">
-                            {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-3.5 text-muted-foreground" /> })()}
-                            {t(`loc.${currentLoc?.id}`) || t('unknown')}
-                        </span>
-                    )}
-                </Link>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Link
+                            href="/travel"
+                            className="group flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-white/10 transition-all duration-200 shrink-0 hover:scale-105"
+                        >
+                            {isTraveling ? (
+                                <span className="flex items-center gap-1.5 text-primary font-bold animate-pulse">
+                                    <PlaneIcon className="size-4" /> 
+                                    <span className="font-mono">{Math.ceil(travelCountdown / 1000)}s</span>
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" /> })()}
+                                    <span className="hidden sm:inline">{t(`loc.${currentLoc?.id}`) || t('unknown')}</span>
+                                    <span className="sm:hidden">{t(`loc.${currentLoc?.id}`).split(' ').map(w => w[0]).join('').slice(0, 2)}</span>
+                                </span>
+                            )}
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="border-white/10 bg-zinc-800/95 text-white">
+                        <p className="font-semibold">{t('travel.destinations')}</p>
+                        <p className="text-xs text-white/70 mt-0.5">
+                            {isTraveling 
+                                ? `${t('travel.headingTo')} - ${Math.ceil(travelCountdown / 1000)}s`
+                                : `${t('travel.here')} - ${t(`loc.${currentLoc?.id}`)}`
+                            }
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
 
                 {/* Center: Stat Bars */}
                 <div className="flex items-center gap-2 sm:gap-3">
@@ -118,38 +153,78 @@ export function TopHud({
 
                 {/* Right: Money + Language */}
                 <div className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 shrink-0">
-                        <CoinsIcon className="size-3.5" />
-                        <span className="tabular-nums">
-                            ${Number(money) >= 1000
-                                ? `${(Number(money) / 1000).toFixed(1)}K`
-                                : Number(money).toLocaleString()}
-                        </span>
-                    </div>
-                    <button
-                        aria-label={t('hud.language')}
-                        onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-                        className="p-1 rounded hover:bg-white/10 text-[10px] font-bold uppercase"
-                        title={t('hud.language')}
-                    >
-                        {locale === 'id' ? 'EN' : 'ID'}
-                    </button>
-                    <button
-                        aria-label="Toggle RTL/LTR"
-                        onClick={toggleDir}
-                        className="p-1 rounded hover:bg-white/10"
-                        title={`${dir.toUpperCase()}`}
-                    >
-                        <ArrowRightLeftIcon className="size-3.5" />
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 shrink-0 bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-500/20 cursor-help">
+                                <CoinsIcon className="size-4" />
+                                <span className="tabular-nums">
+                                    ${Number(money) >= 1000
+                                        ? `${(Number(money) / 1000).toFixed(1)}K`
+                                        : Number(money).toLocaleString()}
+                                </span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="border-white/10 bg-zinc-800/95 text-white">
+                            <p className="font-semibold">{t('balance')}</p>
+                            <p className="text-xs text-white/70 mt-0.5">
+                                ${Number(money).toLocaleString()}
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                aria-label={t('hud.language')}
+                                onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+                                className="p-1.5 rounded-lg hover:bg-white/10 text-[10px] font-bold uppercase transition-all duration-200 hover:scale-110"
+                                title={t('hud.language')}
+                            >
+                                {locale === 'id' ? 'EN' : 'ID'}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="border-white/10 bg-zinc-800/95 text-white">
+                            <p>{t('hud.language')}</p>
+                            <p className="text-xs text-white/70 mt-0.5">
+                                {locale === 'id' ? 'Bahasa Indonesia' : 'English'}
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                aria-label="Toggle RTL/LTR"
+                                onClick={toggleDir}
+                                className="p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"
+                                title={`${dir.toUpperCase()}`}
+                            >
+                                <ArrowRightLeftIcon className="size-4" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="border-white/10 bg-zinc-800/95 text-white">
+                            <p>Toggle Text Direction</p>
+                            <p className="text-xs text-white/70 mt-0.5">
+                                Current: {dir.toUpperCase()} (Left-to-Right)
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 
             {/* Hospitalized banner */}
             {isHospitalized && (
-                <div className="flex items-center justify-center gap-1.5 bg-red-900/80 text-center text-xs text-red-200 py-1 font-medium">
-                    <HospitalIcon className="size-3.5" /> {t('hud.hospitalized')}
-                </div>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center gap-2 bg-red-500/10 border-t border-red-500/20 text-center text-xs text-red-300 py-2 font-medium cursor-help">
+                            <HospitalIcon className="size-3.5 animate-pulse" /> {t('hud.hospitalized')}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="border-red-500/20 bg-red-900/90 text-red-100">
+                        <p className="font-semibold">{t('dashboard.hospitalized')}</p>
+                        <p className="text-xs text-red-200 mt-0.5">
+                            {t('dashboard.hospitalizedDesc')}
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
             )}
         </header>
     )

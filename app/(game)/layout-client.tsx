@@ -19,6 +19,7 @@ import {
   LockIcon,
   ShoppingBagIcon,
   ShieldIcon,
+  HammerIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -54,6 +55,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Lock: LockIcon,
   ShoppingBag: ShoppingBagIcon,
   Shield: ShieldIcon,
+  Hammer: HammerIcon,
 }
 
 type Player = {
@@ -152,7 +154,7 @@ export default function GameLayoutClient({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh flex-col">
       <TopHud
         isTraveling={isTraveling}
         travelCountdown={travelCountdown}
@@ -183,7 +185,7 @@ export default function GameLayoutClient({
       />
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <main className="mx-auto w-full max-w-2xl flex-1 p-4 pb-20 space-y-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 p-3 sm:p-4 pb-24 sm:pb-28 space-y-4">
         {player.lastEncounterMsg && !hideEncounter && (
           <EncounterAlert
             message={player.lastEncounterMsg}

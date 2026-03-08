@@ -31,23 +31,26 @@ export function LocationNav({
     // Location sub-nav — shows facilities at current location
     if (!isTraveling && facilities.length > 0) {
         return (
-            <div className="sticky top-[41px] z-40 border-b border-white/10 bg-zinc-800/95 backdrop-blur-sm text-white">
+            <div className="sticky top-[53px] z-40 border-b border-white/5 bg-zinc-800/60 backdrop-blur-xl text-white shadow-md">
                 <div className="mx-auto max-w-2xl overflow-x-auto scrollbar-none">
-                    <div className="flex items-center gap-1 px-2 py-1.5 min-w-min">
+                    <div className="flex items-center gap-1.5 px-3 py-2 min-w-min">
                         {facilities.map((f) => {
                             const isActive = pathname === f.href
                             return (
                                 <Link
                                     key={f.href}
                                     href={f.href}
-                                    className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${isActive
-                                        ? 'bg-white/20 text-white'
-                                        : 'text-white/50 hover:text-white hover:bg-white/8'
-                                        }`}
+                                    className={`group relative flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                                        isActive
+                                            ? 'bg-gradient-to-r from-primary/30 to-primary/10 text-white shadow-md scale-105'
+                                            : 'text-white/60 hover:text-white hover:bg-white/10'
+                                    }`}
                                 >
-                                    <f.Icon className="size-3.5" />
+                                    <f.Icon className={`size-4 transition-colors duration-200 ${isActive ? 'text-white' : ''}`} />
                                     {f.label}
-                                    {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />}
+                                    {isActive && (
+                                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-primary to-transparent" />
+                                    )}
                                 </Link>
                             )
                         })}
@@ -60,12 +63,17 @@ export function LocationNav({
     // Traveling banner
     if (isTraveling) {
         return (
-            <div className="sticky top-[41px] z-40 border-b border-white/10 bg-zinc-800/95 backdrop-blur-sm text-white">
-                <div className="mx-auto max-w-2xl px-3 py-2 text-center">
-                    <span className="text-xs text-white/50 flex items-center justify-center gap-1.5">
-                        <PlaneIcon className="size-3.5 animate-pulse text-primary" />
-                        {t('travel.headingTo', { location: t(`loc.${travelingTo}`) })}
-                        <span className="font-mono text-primary font-bold">{Math.ceil(travelCountdown / 1000)}s</span>
+            <div className="sticky top-[53px] z-40 border-b border-white/5 bg-zinc-800/60 backdrop-blur-xl text-white shadow-md">
+                <div className="mx-auto max-w-2xl px-3 py-3 text-center">
+                    <span className="text-xs text-white/60 flex items-center justify-center gap-2">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/30 blur-md rounded-full" />
+                            <PlaneIcon className="relative size-4 animate-pulse text-primary" />
+                        </div>
+                        <span>{t('travel.headingTo', { location: t(`loc.${travelingTo}`) })}</span>
+                        <span className="font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">
+                            {Math.ceil(travelCountdown / 1000)}s
+                        </span>
                     </span>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-# My Game
+# Vandara - Text-Based RPG
 
 A single-player browser RPG inspired by Torn City, built with Next.js,
 React, and PostgreSQL.
@@ -19,25 +19,36 @@ real estate empire.
   better loot tables and recycling recipes.
 - **Battle Stats** — Train Strength, Defense, Speed, and Dexterity through
   12 gym exercises across 3 intensity tiers.
+- **Education System** — Take courses to permanently boost stats and unlock abilities (First Aid, Martial Arts, Parkour, Meditation, etc.).
+- **Skill Trees** — Unlock permanent passive bonuses in Combat, Stealth, and Trading trees using skill points earned on level up.
 
 ### Combat & Interaction
 
-- **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs present in all 5 locations. Location matters: gym bros are stronger, downtown folks are richer, and dark alley thugs carry more weapons.
+- **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs present in all 10 locations. Location matters: gym bros are stronger, downtown folks are richer, and dark alley thugs carry more weapons.
 - **NPC Equipment** — Enemies can probabilistically generate carrying Weapons, Armor, and Accessories, granting them significant hidden stat boosts requiring players to adapt.
 - **Turn-based PvE** — Choose between Attack, Heavy Attack, Defend, or Flee.
   Combat factors in all four stats for hit chance, damage, and crits.
+- **Special Moves** — Unlock powerful combat abilities like Power Strike, Leg Sweep, Blade Fury, and Critical Aim as you level up.
 - **Pickpocket System** — Test your DEX and SPD against NPCs to steal their money without fighting. Costs Nerve, rewards cash on success, but immediately triggers severe damage and potential hospitalization if caught!
 - **Hospitalization** — Lose a fight or get caught pickpocketing with low HP, and you're hospitalized with a recovery timer. All activities are blocked until release.
 
-- **Integrated Scavenging & Tool Center** — A consolidated UI allowing seamless switching between Scavenging drops and Tool Management (equipping flashlights, metal detectors).
-- **5 Location Loot Tables** — City Center (cash and consumables), Gym
-  District (protein and energy), Business District (valuables), Dark Alley
-  (materials and weapons), Hospital (medical supplies).
-- **Item Rarity** — 4 tiers (Common, Uncommon, Rare, Epic) with color-coded
-  UI indicators.
+### Scavenging & Exploration
+
+- **10 Locations** — Explore a vast city with unique loot tables and scavenge spots:
+  - **City Center** — Cash and consumables, safe starting area
+  - **Gym District** — Protein shakes and energy drinks
+  - **Business District** — Briefcases and valuable watches
+  - **Dark Alley** — Materials, weapons, and high-risk high-reward loot
+  - **Hospital** — Medical supplies and bandages
+  - **Port Docks** (Level 10) — Cargo containers and fishing boats
+  - **University District** (Level 8) — Libraries and computer labs
+  - **Industrial Zone** (Level 15) — Factories and mining sites
+  - **Waterfront** (Level 20) — Marina and luxury yacht clubs
+  - **Underground** (Level 30) — Secret arenas and underground labs
+- **5 Location Loot Tables** — Each location has unique drop rates and item pools that scale with your scavenge level.
+- **Item Rarity** — 4 tiers (Common, Uncommon, Rare, Epic) with color-coded UI indicators.
 - **Scavenge Tools** — Equip a Flashlight (reduces "nothing" drops by 30%),
-  Metal Detector (+25% materials, 1.3× money), or Lucky Gloves (+20% rare
-  and epic chance).
+  Metal Detector (+25% materials, 1.3× money), or Lucky Gloves (+20% rare and epic chance).
 - **Streak System** — Consecutive scavenges at the same location grant +0.5%
   loot bonus per action. Resets when you switch locations.
 - **Double Mode** — Spend 10 energy instead of 5 for a 30% shift from junk
@@ -54,14 +65,6 @@ real estate empire.
 - **Integrated Crafting Center** — Effortlessly switch between your Backpack inventory and the Crafting/Recycling bench within the same menu.
 - **Recycling** — Turn junk into useful items through 6 recipes, each gated by scavenge level:
 
-| Recipe             | Level | Inputs                                   | Output         |
-|--------------------|-------|------------------------------------------|----------------|
-| Recycle Scrap      | 1     | 3 Rusty Screws + 2 Broken Plastics       | Scrap Metal    |
-| Recycle Bandages   | 2     | 4 Torn Fabrics                           | Bandages       |
-| Recycle Energy     | 3     | 3 Old Batteries + 1 Broken Plastic       | Energy Drink   |
-| Craft Flashlight   | 3     | 5 Batteries + 3 Scrap + 2 Plastic        | Flashlight     |
-| Craft Metal Detector | 5   | 10 Scrap + 5 Batteries + 8 Screws        | Metal Detector |
-| Craft Lucky Gloves | 7     | 10 Torn Fabric + 2 Rusty Shiv + 1 Watch  | Lucky Gloves   |
 
 ### Jobs & Economy
 
@@ -82,11 +85,9 @@ real estate empire.
 
 ### World & Travel
 
-- **5 Locations** — City Center, Gym District, Business District, Dark Alley,
-  and Hospital. Each offers unique facilities and scavenge loot.
-- **Travel Times** — Moving between locations takes 3–6 seconds depending on
-  distance.
-- **Random Encounters** — 1% chance per trip for events like finding dropped
+- **10 Locations** — Each offers unique facilities, NPCs, and scavenge loot tables.
+- **Fast Travel** — Moving between locations takes 3-18 seconds depending on distance.
+- **Random Encounters** — Chance per trip for events like finding dropped
   money or getting mugged.
 - **Location Buffs** — 2× Health regen in the Hospital, 2× Happy regen in
   the City Center, and pickpocket risk in the Dark Alley.
@@ -108,6 +109,7 @@ timestamps:
 
 - Full Indonesian and English translations with locale-aware item names,
   event descriptions, and UI labels.
+- Toggle language anytime from the top HUD.
 
 ## 🛠️ Tech Stack
 
@@ -159,19 +161,39 @@ app/
     hospital/               # Recovery after defeat
     inventory/              # Item management, tool equipping, recycling
     jobs/                   # Career progression
+    education/              # Courses and skill learning
+    skills/                 # Skill tree unlocks
+    crafting/               # Item crafting and recycling
+    marketplace/            # Player trading
+    faction/                # Gang/faction management
+    jail/                   # Prison system
+    equipment/              # Equipment management
+    quests/                 # Daily quests
   create/                   # Character creation with avatar builder
 lib/
   db/
-    schema.ts               # Drizzle ORM table definitions (8 tables)
+    schema.ts               # Drizzle ORM table definitions (15+ tables)
     index.ts                # Database connection
   game/
-    constants.ts            # Items, locations, jobs, loot tables, recipes, events
+    constants/              # Modular game constants
+      items.ts              # Item definitions and rarity
+      locations.ts          # Locations, travel times, facilities, NPCs
+      gym.ts                # Gym exercises
+      jobs.ts               # Job definitions
+      scavenge.ts           # Scavenge constants and loot tables
+      education.ts          # Education courses
+      skills.ts             # Skill trees and bonuses
+      faction.ts            # Faction data
+      jail.ts               # Jail system
+      marketplace.ts        # Marketplace constants
+      ...
+    types.ts                # TypeScript type definitions
     npc-generator.ts        # Time-seeded PRNG NPC engine
     regen.ts                # Background stat regeneration
   i18n/
-    translations.ts         # Indonesian & English translations
+    translations.ts         # Indonesian & English translations (1000+ keys)
 components/
-  game/                     # Gameplay UI components (regen timer, etc.)
+  game/                     # Gameplay UI components (regen timer, HUD, etc.)
   ui/                       # shadcn/ui primitives
 avataaars-assets/           # SVG avatar rendering system
 ```

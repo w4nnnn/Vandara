@@ -14,7 +14,7 @@ import {
 import {
   getFaction, createFaction, leaveFaction, listFactions, joinFaction, depositFactionMoney,
 } from '@/app/actions/factions'
-import { FACTION_CREATE_COST, FACTION_MAX_MEMBERS, FACTION_TERRITORY_BONUSES } from '@/lib/game/constants'
+import { FACTION_CREATE_COST, FACTION_MAX_MEMBERS, FACTION_TERRITORY_BONUSES, type LocationId } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
 import { toast } from 'sonner'
 
@@ -166,11 +166,11 @@ export default function FactionContent({ player }: { player: Player }) {
                 </div>
               </div>
 
-              {faction.territoryId && FACTION_TERRITORY_BONUSES[faction.territoryId] && (
+              {faction.territoryId && FACTION_TERRITORY_BONUSES[faction.territoryId as LocationId] && (
                 <Alert className="border-purple-500/30 bg-purple-500/5">
                   <TrendingUpIcon className="size-4 text-purple-400" />
-                  <AlertTitle className="text-sm">{t('faction.territory')}: {FACTION_TERRITORY_BONUSES[faction.territoryId].label}</AlertTitle>
-                  <AlertDescription className="text-xs">{FACTION_TERRITORY_BONUSES[faction.territoryId].bonus}</AlertDescription>
+                  <AlertTitle className="text-sm">{t('faction.territory')}: {FACTION_TERRITORY_BONUSES[faction.territoryId as LocationId].label}</AlertTitle>
+                  <AlertDescription className="text-xs">{FACTION_TERRITORY_BONUSES[faction.territoryId as LocationId].bonus}</AlertDescription>
                 </Alert>
               )}
 
@@ -229,7 +229,7 @@ export default function FactionContent({ player }: { player: Player }) {
                       <span className="font-medium text-sm">[{f.tag}] {f.name}</span>
                       <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
                         <span>{f.memberCount}/{FACTION_MAX_MEMBERS} anggota</span>
-                        {f.territoryId && <span>Wilayah: {FACTION_TERRITORY_BONUSES[f.territoryId]?.label ?? f.territoryId}</span>}
+                        {f.territoryId && <span>Wilayah: {FACTION_TERRITORY_BONUSES[f.territoryId as LocationId]?.label ?? f.territoryId}</span>}
                       </div>
                     </div>
                     {!faction && f.memberCount < FACTION_MAX_MEMBERS && (
