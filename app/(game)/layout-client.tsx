@@ -28,17 +28,13 @@ import {
   SearchIcon,
   StoreIcon,
   ArrowRightLeftIcon,
-  LanguagesIcon,
   ScrollTextIcon,
   HammerIcon,
-  SparklesIcon,
-  SwordIcon,
-  DicesIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
   LOCATIONS,
-  ACTIVITY_LOCATIONS,
+  FACILITY_ROUTES,
   ENERGY_REGEN_RATE,
   ENERGY_REGEN_INTERVAL_MS,
   NERVE_REGEN_RATE,
@@ -50,6 +46,19 @@ import {
   type LocationId,
 } from '@/lib/game/constants'
 
+// Icon resolver for facility routes
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard: LayoutDashboardIcon,
+  Backpack: BackpackIcon,
+  Search: SearchIcon,
+  Store: StoreIcon,
+  Building: BuildingIcon,
+  Users: UsersIcon,
+  Dumbbell: DumbbellIcon,
+  Briefcase: BriefcaseIcon,
+  HeartPulse: HeartPulseIcon,
+}
+
 const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
   city_center: BuildingIcon,
   gym_district: DumbbellIcon,
@@ -57,6 +66,15 @@ const LOCATION_ICONS: Record<LocationId, LucideIcon> = {
   dark_alley: MapPinIcon,
   hospital: HospitalIcon,
 }
+
+// Bottom nav — only personal/global items (5 max)
+const BOTTOM_NAV = [
+  { key: 'nav.home', href: '/dashboard', icon: LayoutDashboardIcon },
+  { key: 'nav.inventory', href: '/inventory', icon: BackpackIcon },
+  { key: 'nav.quests', href: '/quests', icon: ScrollTextIcon },
+  { key: 'nav.crafting', href: '/crafting', icon: HammerIcon },
+  { key: 'nav.travel', href: '/travel', icon: PlaneIcon },
+]
 
 type Player = {
   id: number
@@ -79,24 +97,6 @@ type Player = {
   isHospitalized: boolean
   avatar?: Record<string, any> | null
 }
-
-const NAV_KEYS = [
-  { key: 'nav.home', href: '/dashboard', icon: LayoutDashboardIcon, activity: null },
-  { key: 'nav.travel', href: '/travel', icon: PlaneIcon, activity: null },
-  { key: 'nav.scavenge', href: '/scavenge', icon: SearchIcon, activity: null },
-  { key: 'nav.shop', href: '/shop', icon: StoreIcon, activity: null },
-  { key: 'nav.properties', href: '/properties', icon: BuildingIcon, activity: null },
-  { key: 'nav.npc', href: '/npc', icon: UsersIcon, activity: 'combat' as const },
-  { key: 'nav.gym', href: '/gym', icon: DumbbellIcon, activity: 'gym' as const },
-  { key: 'nav.jobs', href: '/jobs', icon: BriefcaseIcon, activity: 'jobs' as const },
-  { key: 'nav.hospital', href: '/hospital', icon: HeartPulseIcon, activity: 'hospital' as const },
-  { key: 'nav.inventory', href: '/inventory', icon: BackpackIcon, activity: null },
-  { key: 'nav.quests', href: '/quests', icon: ScrollTextIcon, activity: null },
-  { key: 'nav.crafting', href: '/crafting', icon: HammerIcon, activity: null },
-  { key: 'nav.skills', href: '/skills', icon: SparklesIcon, activity: null },
-  { key: 'nav.equipment', href: '/equipment', icon: SwordIcon, activity: null },
-  { key: 'nav.minigames', href: '/minigames', icon: DicesIcon, activity: null },
-]
 
 // ─── Compact HUD Stat Bar ────────────────────────────────────────
 
@@ -184,6 +184,17 @@ export default function GameLayoutClient({
 
   const currentLoc = LOCATIONS[player.currentLocation as LocationId]
 
+  // Get facilities available at current location
+  const facilities = (currentLoc?.facilities ?? [])
+    .map(name => {
+      const route = FACILITY_ROUTES[name]
+      if (!route) return null
+      const Icon = ICON_MAP[route.iconKey]
+      if (!Icon) return null
+      return { name, href: route.href, Icon, label: t(`facility.${name}`) }
+    })
+    .filter(Boolean) as { name: string; href: string; Icon: LucideIcon; label: string }[]
+
   function handleDismissEncounter() {
     setHideEncounter(true)
     startTransition(async () => {
@@ -203,9 +214,9 @@ export default function GameLayoutClient({
             className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium hover:bg-white/10 transition-colors shrink-0"
           >
             {isTraveling ? (
-              <div className="absolute flex items-center gap-1 -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary/20 px-3 py-0.5 text-[10px] sm:text-xs font-bold text-primary backdrop-blur-md">
-                <PlaneIcon className="size-3" /> {Math.ceil(travelCountdown / 1000)}s
-              </div>
+              <span className="flex items-center gap-1 text-primary font-bold animate-pulse">
+                <PlaneIcon className="size-3.5" /> {Math.ceil(travelCountdown / 1000)}s
+              </span>
             ) : (
               <span className="flex items-center gap-1.5">
                 {currentLoc && (() => { const Icon = LOCATION_ICONS[currentLoc.id]; return <Icon className="size-3.5 text-muted-foreground" /> })()}
@@ -222,7 +233,7 @@ export default function GameLayoutClient({
             <HudStat icon={SmileIcon} current={stats.happy} max={player.maxHappy} color="text-yellow-500" label={t('happy')} />
           </div>
 
-          {/* Right: Money + Language + RTL toggle */}
+          {/* Right: Money + Language */}
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 shrink-0">
               <CoinsIcon className="size-3.5" />
@@ -259,6 +270,45 @@ export default function GameLayoutClient({
         )}
       </header>
 
+      {/* ═══ LOCATION SUB-NAV — shows facilities at current location ═══ */}
+      {!isTraveling && facilities.length > 0 && (
+        <div className="sticky top-[41px] z-40 border-b border-white/10 bg-zinc-800/95 backdrop-blur-sm text-white">
+          <div className="mx-auto max-w-2xl overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1 px-2 py-1.5 min-w-min">
+              {facilities.map((f) => {
+                const isActive = pathname === f.href
+                return (
+                  <Link
+                    key={f.href}
+                    href={f.href}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${isActive
+                        ? 'bg-white/15 text-white shadow-sm'
+                        : 'text-white/50 hover:text-white hover:bg-white/8'
+                      }`}
+                  >
+                    <f.Icon className="size-3.5" />
+                    {f.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Traveling banner */}
+      {isTraveling && (
+        <div className="sticky top-[41px] z-40 border-b border-white/10 bg-zinc-800/95 backdrop-blur-sm text-white">
+          <div className="mx-auto max-w-2xl px-3 py-2 text-center">
+            <span className="text-xs text-white/50 flex items-center justify-center gap-1.5">
+              <PlaneIcon className="size-3.5 animate-pulse text-primary" />
+              {t('travel.headingTo', { location: t(`loc.${player.travelingTo}`) })}
+              <span className="font-mono text-primary font-bold">{Math.ceil(travelCountdown / 1000)}s</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ═══ MAIN CONTENT ═══ */}
       <main className="mx-auto w-full max-w-2xl flex-1 p-4 pb-20 space-y-4">
         {/* Random Encounter Banner */}
@@ -278,45 +328,23 @@ export default function GameLayoutClient({
         {children}
       </main>
 
-      {/* ═══ BOTTOM NAV BAR ═══ */}
+      {/* ═══ BOTTOM NAV BAR (5 items — personal/global only) ═══ */}
       <nav className="fixed bottom-0 inset-x-0 z-50 border-t bg-zinc-900/95 backdrop-blur-sm text-white safe-area-pb">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-1 py-1">
-          {NAV_KEYS.map((item) => {
+        <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-1">
+          {BOTTOM_NAV.map((item) => {
             const label = t(item.key)
             const isActive = pathname === item.href
-            const requiredLoc = item.activity ? ACTIVITY_LOCATIONS[item.activity] : null
-            const isLocked = requiredLoc
-              ? player.currentLocation !== requiredLoc || !!player.travelingTo
-              : !!player.travelingTo && item.activity !== null
-
-            const handleNavClick = (e: React.MouseEvent) => {
-              if (isLocked && item.activity) {
-                e.preventDefault()
-                const locLabel = t(`activityLoc.${item.activity}`)
-                toast.warning(t('toast.notAvailable', { item: label }), {
-                  description: t('toast.mustTravel', { loc: locLabel, item: label }),
-                  action: {
-                    label: t('toast.go'),
-                    onClick: () => router.push('/travel'),
-                  },
-                })
-              }
-            }
-
             return (
               <Link
                 key={item.href}
-                href={isLocked ? '#' : item.href}
-                onClick={handleNavClick}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 h-14 rounded-xl text-[10px] sm:text-xs transition-colors ${isActive
-                  ? 'text-white bg-white/15'
-                  : isLocked
-                    ? 'text-white/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                href={item.href}
+                className={`flex flex-col items-center justify-center gap-1 h-14 px-3 rounded-xl text-xs transition-colors ${isActive
+                    ? 'text-white bg-white/15'
+                    : 'text-white/50 hover:text-white hover:bg-white/5'
                   }`}
               >
                 <item.icon className="size-5" />
-                <span className="truncate w-full text-center px-0.5">{label}</span>
+                <span className="text-[10px] font-medium">{label}</span>
               </Link>
             )
           })}

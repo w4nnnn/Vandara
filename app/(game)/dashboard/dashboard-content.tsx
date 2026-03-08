@@ -19,6 +19,8 @@ import {
   PlaneIcon,
   MapPinIcon,
   UsersIcon,
+  SparklesIcon,
+  DicesIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LOCATIONS, type LocationId } from '@/lib/game/constants'
@@ -206,6 +208,28 @@ export default function DashboardContent({ player }: { player: Player }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Actions — features not tied to a location */}
+      <div className="grid grid-cols-3 gap-3">
+        <Link href="/skills" className="group flex flex-col items-center gap-2 rounded-xl border p-4 hover:bg-primary/5 hover:border-primary/30 transition-all">
+          <div className="rounded-full bg-purple-500/10 p-2.5 group-hover:bg-purple-500/20 transition-colors">
+            <SparklesIcon className="size-5 text-purple-500" />
+          </div>
+          <span className="text-xs font-medium">Skills</span>
+        </Link>
+        <Link href="/equipment" className="group flex flex-col items-center gap-2 rounded-xl border p-4 hover:bg-primary/5 hover:border-primary/30 transition-all">
+          <div className="rounded-full bg-orange-500/10 p-2.5 group-hover:bg-orange-500/20 transition-colors">
+            <SwordIcon className="size-5 text-orange-500" />
+          </div>
+          <span className="text-xs font-medium">Equipment</span>
+        </Link>
+        <Link href="/minigames" className="group flex flex-col items-center gap-2 rounded-xl border p-4 hover:bg-primary/5 hover:border-primary/30 transition-all">
+          <div className="rounded-full bg-cyan-500/10 p-2.5 group-hover:bg-cyan-500/20 transition-colors">
+            <DicesIcon className="size-5 text-cyan-500" />
+          </div>
+          <span className="text-xs font-medium">Mini-Games</span>
+        </Link>
+      </div>
 
     </div>
   )

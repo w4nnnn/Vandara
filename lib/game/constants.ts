@@ -664,6 +664,19 @@ export const ACTIVITY_LOCATIONS: Record<string, LocationId> = {
   hospital: 'hospital',
 }
 
+// Facility name → route + icon key (icons resolved in client code)
+export const FACILITY_ROUTES: Record<string, { href: string; iconKey: string }> = {
+  'Beranda': { href: '/dashboard', iconKey: 'LayoutDashboard' },
+  'Inventaris': { href: '/inventory', iconKey: 'Backpack' },
+  'Memulung': { href: '/scavenge', iconKey: 'Search' },
+  'Toko': { href: '/shop', iconKey: 'Store' },
+  'Properti': { href: '/properties', iconKey: 'Building' },
+  'NPC': { href: '/npc', iconKey: 'Users' },
+  'Gym': { href: '/gym', iconKey: 'Dumbbell' },
+  'Kerja': { href: '/jobs', iconKey: 'Briefcase' },
+  'Rumah Sakit': { href: '/hospital', iconKey: 'HeartPulse' },
+}
+
 // ─── QUESTS ──────────────────────────────────────────────────────
 
 export type QuestObjective = 'scavenge' | 'combat_win' | 'gym_train' | 'job_work' | 'travel' | 'craft' | 'shop_buy'
