@@ -88,9 +88,13 @@ export async function completeCourse() {
 
   if (course.rewards.statBonus) {
     if (course.rewards.statBonus.strength) updates.strength = sql`${players.strength} + ${course.rewards.statBonus.strength}`
-    if (course.rewards.statBonus.defense) updates.defense = sql`${players.defense} + ${course.rewards.statBonus.defense}`
-    if (course.rewards.statBonus.speed) updates.speed = sql`${players.speed} + ${course.rewards.statBonus.speed}`
     if (course.rewards.statBonus.dexterity) updates.dexterity = sql`${players.dexterity} + ${course.rewards.statBonus.dexterity}`
+    if (course.rewards.statBonus.constitution) updates.constitution = sql`${players.constitution} + ${course.rewards.statBonus.constitution}`
+    if (course.rewards.statBonus.intelligence) updates.intelligence = sql`${players.intelligence} + ${course.rewards.statBonus.intelligence}`
+    if (course.rewards.statBonus.wisdom) updates.wisdom = sql`${players.wisdom} + ${course.rewards.statBonus.wisdom}`
+    if (course.rewards.statBonus.charisma) updates.charisma = sql`${players.charisma} + ${course.rewards.statBonus.charisma}`
+    if (course.rewards.statBonus.luck) updates.luck = sql`${players.luck} + ${course.rewards.statBonus.luck}`
+    if (course.rewards.statBonus.perception) updates.perception = sql`${players.perception} + ${course.rewards.statBonus.perception}`
   }
   if (course.rewards.maxEnergyBonus) updates.maxEnergy = sql`${players.maxEnergy} + ${course.rewards.maxEnergyBonus}`
   if (course.rewards.maxNerveBonus) updates.maxNerve = sql`${players.maxNerve} + ${course.rewards.maxNerveBonus}`

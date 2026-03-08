@@ -6,7 +6,7 @@ export interface CourseDef {
   cost: number
   levelRequired: number
   rewards: {
-    statBonus?: Partial<Record<'strength' | 'defense' | 'speed' | 'dexterity', number>>
+    statBonus?: Partial<Record<'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma' | 'luck' | 'perception', number>>
     maxEnergyBonus?: number
     maxNerveBonus?: number
     maxHealthBonus?: number
@@ -28,12 +28,12 @@ export const COURSES: CourseDef[] = [
   {
     id: 'martial_arts', label: 'Bela Diri', description: 'Teknik bela diri dasar sampai menengah.',
     durationMinutes: 120, cost: 15000, levelRequired: 5,
-    rewards: { statBonus: { strength: 3, defense: 3 } },
+    rewards: { statBonus: { strength: 3, constitution: 3 } },
   },
   {
     id: 'parkour_course', label: 'Kursus Parkour', description: 'Latih kelincahan dan kecepatan alami.',
     durationMinutes: 90, cost: 10000, levelRequired: 4,
-    rewards: { statBonus: { speed: 3, dexterity: 2 } },
+    rewards: { statBonus: { dexterity: 3, perception: 2 } },
   },
   {
     id: 'meditation', label: 'Meditasi', description: 'Tingkatkan ketenangan dan fokus mental.',
@@ -43,7 +43,7 @@ export const COURSES: CourseDef[] = [
   {
     id: 'advanced_combat', label: 'Tempur Lanjutan', description: 'Teknik tempur tingkat lanjut.',
     durationMinutes: 180, cost: 30000, levelRequired: 10,
-    rewards: { statBonus: { strength: 5, defense: 5, speed: 3, dexterity: 3 } },
+    rewards: { statBonus: { strength: 5, constitution: 5, dexterity: 3, wisdom: 2 } },
   },
   {
     id: 'survival_training', label: 'Latihan Bertahan Hidup', description: 'Teknik bertahan dalam kondisi ekstrim.',

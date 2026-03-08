@@ -6,7 +6,16 @@ export interface CombatBonus {
   defense?: number
   speed?: number
   dexterity?: number
+  strength?: number
+  constitution?: number
+  intelligence?: number
+  wisdom?: number
+  charisma?: number
+  luck?: number
+  perception?: number
   maxHp?: number
+  critChance?: number
+  dodgeChance?: number
 }
 
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory' | 'tool'
@@ -14,6 +23,83 @@ export type EquipmentSlot = 'weapon' | 'armor' | 'accessory' | 'tool'
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic'
 
 export type ItemCategory = 'consumable' | 'booster' | 'material' | 'junk' | 'tool' | 'weapon' | 'armor' | 'accessory'
+
+/**
+ * Derived stats calculated from 8 base stats
+ * STR, DEX, CON, INT, WIS, CHA, LCK, PER
+ */
+export interface DerivedStats {
+  maxHealth: number    // dari CON + STR
+  maxEnergy: number    // dari CON + WIS
+  maxNerve: number     // dari WIS + PER
+  maxHappy: number     // dari CHA + WIS
+  critChance: number   // dari LCK + DEX (soft cap ~35%)
+  dodgeChance: number  // dari DEX + PER (soft cap ~30%)
+  accuracy: number     // dari DEX + PER (soft cap ~98%)
+  blockChance: number  // dari CON + STR (soft cap ~25%)
+}
+
+/**
+ * Stat synergy bonus definition
+ */
+export interface StatSynergyBonus {
+  meleeDamage?: number
+  critChance?: number
+  maxHp?: number
+  lootQuality?: number
+  energyCost?: number
+  attack?: number
+  defense?: number
+  blockChance?: number
+  dodgeChance?: number
+  critDamage?: number
+  accuracy?: number
+}
+
+/**
+ * Stat synergy definition with tiered bonuses
+ */
+export interface StatSynergyDef {
+  tiers: {
+    requires: {
+      strength?: number
+      dexterity?: number
+      constitution?: number
+      intelligence?: number
+      wisdom?: number
+      charisma?: number
+      luck?: number
+      perception?: number
+    }
+    bonus: StatSynergyBonus
+    label: string
+  }[]
+}
+
+/**
+ * Active synergy with ID and current tier
+ */
+export interface ActiveSynergy {
+  id: string
+  tier: number
+  label: string
+  bonus: StatSynergyBonus
+}
+
+/**
+ * Equipment requirements for items
+ */
+export interface ItemRequirements {
+  strength?: number
+  dexterity?: number
+  constitution?: number
+  intelligence?: number
+  wisdom?: number
+  charisma?: number
+  luck?: number
+  perception?: number
+  level?: number
+}
 
 export interface ItemDef {
   id: string
@@ -34,9 +120,10 @@ export interface ItemDef {
   }
   combatBonus?: CombatBonus
   equipSlot?: EquipmentSlot
+  requirements?: ItemRequirements
 }
 
-export type GymStat = 'strength' | 'defense' | 'speed' | 'dexterity'
+export type GymStat = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma' | 'luck' | 'perception'
 
 export interface GymExercise {
   id: string

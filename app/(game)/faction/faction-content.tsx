@@ -40,7 +40,7 @@ type FactionMember = {
   name: string
   level: number
   strength: number
-  defense: number
+  constitution: number
 }
 
 export default function FactionContent({ player }: { player: Player }) {

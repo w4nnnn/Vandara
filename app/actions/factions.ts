@@ -19,7 +19,7 @@ export async function getFaction() {
 
   const members = await db.query.players.findMany({
     where: eq(players.factionId, faction.id),
-    columns: { id: true, name: true, level: true, strength: true, defense: true },
+    columns: { id: true, name: true, level: true, strength: true, constitution: true },
   })
 
   return { faction: { ...faction, money: Number(faction.money) }, members }

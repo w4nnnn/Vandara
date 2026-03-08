@@ -108,9 +108,13 @@ export type GeneratedNpc = {
     level: number
     description: string
     strength: number
-    defense: number
-    speed: number
     dexterity: number
+    constitution: number
+    intelligence: number
+    wisdom: number
+    charisma: number
+    luck: number
+    perception: number
     maxHealth: number
     nerveCost: number
     moneyDrop: [number, number]
@@ -192,7 +196,7 @@ export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNp
         const armorChance = Math.min(0.9, (0.15 + (clampedLevel / 15) * 0.45) * equipmentBoost)
         const accessoryChance = Math.min(0.9, (0.10 + (clampedLevel / 15) * 0.35) * equipmentBoost)
         const equipment: NpcEquipment = {}
-        let equipAttack = 0, equipDefense = 0, equipSpeed = 0, equipDex = 0, equipHp = 0
+        let equipAttack = 0, equipDefense = 0, equipDex = 0, equipLuck = 0, equipHp = 0
 
         if (prng() < weaponChance) {
             const itemId = pickEquipmentByLevel(NPC_WEAPON_POOL, prng, npcLevel)
@@ -201,8 +205,8 @@ export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNp
             if (bonus) {
                 equipAttack += bonus.attack ?? 0
                 equipDefense += bonus.defense ?? 0
-                equipSpeed += bonus.speed ?? 0
                 equipDex += bonus.dexterity ?? 0
+                equipLuck += bonus.luck ?? 0
                 equipHp += bonus.maxHp ?? 0
             }
         }
@@ -214,8 +218,8 @@ export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNp
             if (bonus) {
                 equipAttack += bonus.attack ?? 0
                 equipDefense += bonus.defense ?? 0
-                equipSpeed += bonus.speed ?? 0
                 equipDex += bonus.dexterity ?? 0
+                equipLuck += bonus.luck ?? 0
                 equipHp += bonus.maxHp ?? 0
             }
         }
@@ -227,32 +231,40 @@ export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNp
             if (bonus) {
                 equipAttack += bonus.attack ?? 0
                 equipDefense += bonus.defense ?? 0
-                equipSpeed += bonus.speed ?? 0
                 equipDex += bonus.dexterity ?? 0
+                equipLuck += bonus.luck ?? 0
                 equipHp += bonus.maxHp ?? 0
             }
         }
 
-        // ─── Base Stats ───────────────────────────────────────────────
+        // ─── Base Stats (8 stats) ─────────────────────────────────────
         const baseStatPool = (npcLevel * 5 + 10) * statBoost
 
         let str = 1 + Math.floor(prng() * (baseStatPool * 0.4))
-        let def = 1 + Math.floor(prng() * (baseStatPool * 0.4))
-        let spd = 1 + Math.floor(prng() * (baseStatPool * 0.4))
         let dex = 1 + Math.floor(prng() * (baseStatPool * 0.4))
+        let con = 1 + Math.floor(prng() * (baseStatPool * 0.4))
+        let int = 1 + Math.floor(prng() * (baseStatPool * 0.2))
+        let wis = 1 + Math.floor(prng() * (baseStatPool * 0.2))
+        let cha = 1 + Math.floor(prng() * (baseStatPool * 0.15))
+        let lck = 1 + Math.floor(prng() * (baseStatPool * 0.25))
+        let per = 1 + Math.floor(prng() * (baseStatPool * 0.3))
 
         str += Math.floor(npcLevel * 1.5 * statBoost)
-        def += Math.floor(npcLevel * 1.2 * statBoost)
-        spd += Math.floor(npcLevel * 1.3 * statBoost)
-        dex += Math.floor(npcLevel * 1.0 * statBoost)
+        dex += Math.floor(npcLevel * 1.3 * statBoost)
+        con += Math.floor(npcLevel * 1.2 * statBoost)
+        int += Math.floor(npcLevel * 0.5 * statBoost)
+        wis += Math.floor(npcLevel * 0.5 * statBoost)
+        cha += Math.floor(npcLevel * 0.3 * statBoost)
+        lck += Math.floor(npcLevel * 0.8 * statBoost)
+        per += Math.floor(npcLevel * 1.0 * statBoost)
 
-        // Apply equipment bonuses on top
+        // Apply equipment bonuses
         str += equipAttack
-        def += equipDefense
-        spd += equipSpeed
+        con += equipDefense
         dex += equipDex
+        lck += equipLuck
 
-        const maxHealth = 15 + (npcLevel * 8 * statBoost) + (def * 2) + equipHp
+        const maxHealth = 15 + (npcLevel * 8 * statBoost) + (con * 2) + equipHp
 
         // Generate Avatar
         const avatar: Record<string, string> = {}
@@ -285,9 +297,13 @@ export function getActiveNpcs(playerLevel: number, locationId: string): ActiveNp
             level: npcLevel,
             description: pickRandom(DESCRIPTIONS, prng),
             strength: str,
-            defense: def,
-            speed: spd,
             dexterity: dex,
+            constitution: con,
+            intelligence: int,
+            wisdom: wis,
+            charisma: cha,
+            luck: lck,
+            perception: per,
             maxHealth,
             nerveCost,
             moneyDrop: [minMoney, maxMoney],

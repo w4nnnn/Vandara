@@ -55,9 +55,10 @@ export async function initiateCombat(enemyId: string) {
             health: player.health,
             maxHealth: player.maxHealth,
             strength: player.strength,
-            defense: player.defense,
-            speed: player.speed,
             dexterity: player.dexterity,
+            constitution: player.constitution,
+            luck: player.luck,
+            perception: player.perception,
         },
         enemyStats: {
             id: enemy.id,
@@ -65,9 +66,10 @@ export async function initiateCombat(enemyId: string) {
             health: enemy.maxHealth,
             maxHealth: enemy.maxHealth,
             strength: enemy.strength,
-            defense: enemy.defense,
-            speed: enemy.speed,
             dexterity: enemy.dexterity,
+            constitution: enemy.constitution,
+            luck: enemy.luck,
+            perception: enemy.perception,
         },
     }
 }
@@ -249,8 +251,8 @@ export async function pickpocketNPC(enemyId: string) {
     }
 
     // Attempt Pickpocket
-    const playerScore = player.dexterity + player.speed
-    const enemyScore = enemy.dexterity + enemy.speed
+    const playerScore = player.dexterity + player.perception
+    const enemyScore = enemy.dexterity + enemy.perception
     // Minimum 15%, max 85% success rate based on stat ratio
     const chance = Math.max(0.15, Math.min(0.85, 0.4 + ((playerScore - enemyScore) / Math.max(1, enemyScore)) * 0.3))
 

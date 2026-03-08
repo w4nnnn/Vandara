@@ -8,9 +8,10 @@ export type CombatantStats = {
     health: number
     maxHealth: number
     strength: number
-    defense: number
-    speed: number
     dexterity: number
+    constitution: number
+    luck: number
+    perception: number
 }
 
 export type TurnAction = 'attack' | 'heavy_attack' | 'defend' | 'flee' | `special_${string}`
@@ -47,11 +48,11 @@ function calcDamage(
     multiplier: number = 1.0
 ): number {
     const hitChance =
-        (attacker.speed + attacker.dexterity) /
-        (attacker.speed + attacker.dexterity + defender.speed + defender.dexterity) + 0.15
+        (attacker.dexterity + attacker.perception) /
+        (attacker.dexterity + attacker.perception + defender.dexterity + defender.perception) + 0.15
     if (Math.random() > hitChance) return 0 // miss
     const raw = randomInt(1, Math.ceil(attacker.strength * multiplier))
-    const block = randomInt(0, Math.floor(defender.defense / 2))
+    const block = randomInt(0, Math.floor(defender.constitution / 2))
     return Math.max(1, raw - block)
 }
 
@@ -130,8 +131,8 @@ export function useCombat(
         }
 
         if (action === 'flee') {
-            const fleeChance = (playerStats.speed + playerStats.dexterity) /
-                (playerStats.speed + playerStats.dexterity + enemyStats.speed + enemyStats.dexterity) + 0.1
+            const fleeChance = (playerStats.dexterity + playerStats.perception) /
+                (playerStats.dexterity + playerStats.perception + enemyStats.dexterity + enemyStats.perception) + 0.1
             if (Math.random() < fleeChance) {
                 fled = true
                 message += t('combat.fleeSuccess')
@@ -153,8 +154,8 @@ export function useCombat(
                     // Offensive special move
                     const adjustedStats = {
                         ...playerStats,
-                        speed: Math.ceil(playerStats.speed * (1 + move.accuracyModifier)),
                         dexterity: Math.ceil(playerStats.dexterity * (1 + move.accuracyModifier)),
+                        perception: Math.ceil(playerStats.perception * (1 + move.accuracyModifier)),
                     }
                     playerDmg = calcDamage(adjustedStats, enemyStats, move.damageMultiplier)
                     if (playerDmg > 0) {
@@ -177,7 +178,7 @@ export function useCombat(
                 // Enemy attacks (if alive and not stunned)
                 if (newEnemyHP > 0 && !newEnemyStunned && !enemyStunned) {
                     const defMultiplier = isDefending ? 2.0 : 1.0
-                    const defendingPlayer = { ...playerStats, defense: Math.ceil(playerStats.defense * defMultiplier) }
+                    const defendingPlayer = { ...playerStats, constitution: Math.ceil(playerStats.constitution * defMultiplier) }
                     enemyDmg = calcDamage(enemyStats, defendingPlayer)
                     newPlayerHP -= enemyDmg
                     message += enemyDmg > 0 ? t('combat.enemyHit', { dmg: String(enemyDmg) }) : t('combat.enemyMiss')
@@ -195,7 +196,7 @@ export function useCombat(
                     ? t('combat.attackHit', { dmg: String(playerDmg) })
                     : t('combat.attackMiss')
             } else if (action === 'heavy_attack') {
-                const boosted = { ...playerStats, strength: Math.ceil(playerStats.strength * 1.8), speed: Math.ceil(playerStats.speed * 0.5) }
+                const boosted = { ...playerStats, strength: Math.ceil(playerStats.strength * 1.8), dexterity: Math.ceil(playerStats.dexterity * 0.5) }
                 playerDmg = calcDamage(boosted, enemyStats, 1.0)
                 message += playerDmg > 0
                     ? t('combat.heavyHit', { dmg: String(playerDmg) })
@@ -212,7 +213,7 @@ export function useCombat(
                 const defMultiplier = (action === 'defend' || isDefending) ? 2.0 : 1.0
                 const defendingPlayer = {
                     ...playerStats,
-                    defense: Math.ceil(playerStats.defense * defMultiplier),
+                    constitution: Math.ceil(playerStats.constitution * defMultiplier),
                 }
                 enemyDmg = calcDamage(enemyStats, defendingPlayer)
                 newPlayerHP -= enemyDmg

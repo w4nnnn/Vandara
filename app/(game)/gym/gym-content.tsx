@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { trainGym } from '@/app/actions/gym'
-import { GYM_EXERCISES, type GymStat } from '@/lib/game/constants'
+import { GYM_EXERCISES, type GymStat, type GymCategory } from '@/lib/game/constants'
 import { useTranslation } from '@/lib/i18n'
 import {
   SwordIcon,
@@ -17,33 +17,62 @@ import {
   DumbbellIcon,
   HeartIcon,
   InfoIcon,
-  BoltIcon
+  BoltIcon,
+  BrainIcon,
+  StarIcon,
+  SmileIcon,
+  SparklesIcon,
+  CrosshairIcon,
 } from 'lucide-react'
 
 type Player = {
   energy: number
   maxEnergy: number
   strength: number
-  defense: number
-  speed: number
   dexterity: number
+  constitution: number
+  intelligence: number
+  wisdom: number
+  charisma: number
+  luck: number
+  perception: number
 }
 
 const STAT_ICON: Record<GymStat, React.ElementType> = {
   strength: SwordIcon,
-  defense: ShieldIcon,
-  speed: ZapIcon,
   dexterity: TargetIcon,
+  constitution: ShieldIcon,
+  intelligence: BrainIcon,
+  wisdom: StarIcon,
+  charisma: SmileIcon,
+  luck: SparklesIcon,
+  perception: CrosshairIcon,
 }
 
 const STAT_COLOR: Record<GymStat, string> = {
   strength: 'text-red-500',
-  defense: 'text-blue-500',
-  speed: 'text-yellow-500',
   dexterity: 'text-green-500',
+  constitution: 'text-blue-500',
+  intelligence: 'text-cyan-500',
+  wisdom: 'text-purple-500',
+  charisma: 'text-pink-500',
+  luck: 'text-yellow-500',
+  perception: 'text-orange-500',
 }
 
-const STAT_LABELS: GymStat[] = ['strength', 'defense', 'speed', 'dexterity']
+const CATEGORY_STATS: Record<GymCategory, GymStat[]> = {
+  physical: ['strength', 'dexterity', 'constitution'],
+  mental: ['intelligence', 'wisdom'],
+  special: ['charisma', 'luck', 'perception'],
+}
+
+const CATEGORY_LABELS: Record<GymCategory, string> = {
+  physical: 'Fisik',
+  mental: 'Mental',
+  special: 'Spesial',
+}
+
+const ALL_STATS: GymStat[] = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma', 'luck', 'perception']
 
 export default function GymContent({ player }: { player: Player }) {
   const router = useRouter()
@@ -84,36 +113,43 @@ export default function GymContent({ player }: { player: Player }) {
         </CardContent>
       </Card>
 
-      {/* Current stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {STAT_LABELS.map((stat) => {
-          const Icon = STAT_ICON[stat]
-          return (
-            <Card
-              key={stat}
-              className={`cursor-pointer transition-colors ${selectedStat === stat
-                ? 'border-primary ring-1 ring-primary'
-                : 'hover:border-muted-foreground/30'
-                }`}
-              onClick={() => setSelectedStat(stat)}
-            >
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="rounded-md bg-muted p-2">
-                  <Icon className={`size-4 ${STAT_COLOR[stat]}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t(stat)}
-                  </p>
-                  <p className="text-lg font-bold">
-                    {player[stat].toLocaleString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      {/* Current stats by category */}
+      {(['physical', 'mental', 'special'] as GymCategory[]).map((category) => (
+        <div key={category} className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {CATEGORY_LABELS[category]}
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {CATEGORY_STATS[category].map((stat) => {
+              const Icon = STAT_ICON[stat]
+              return (
+                <Card
+                  key={stat}
+                  className={`cursor-pointer transition-colors ${selectedStat === stat
+                    ? 'border-primary ring-1 ring-primary'
+                    : 'hover:border-muted-foreground/30'
+                    }`}
+                  onClick={() => setSelectedStat(stat)}
+                >
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <div className="rounded-md bg-muted p-2">
+                      <Icon className={`size-4 ${STAT_COLOR[stat]}`} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {t(stat)}
+                      </p>
+                      <p className="text-lg font-bold">
+                        {player[stat].toLocaleString()}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      ))}
 
       {/* Result toast */}
       {result && (

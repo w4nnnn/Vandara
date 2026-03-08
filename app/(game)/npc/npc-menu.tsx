@@ -57,13 +57,13 @@ export function NpcMenu({
                         <SwordsIcon className="size-3" /> STR {npc.strength}
                     </span>
                     <span className="flex items-center gap-1">
-                        <ShieldIcon className="size-3" /> DEF {npc.defense}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <ZapIcon className="size-3" /> SPD {npc.speed}
-                    </span>
-                    <span className="flex items-center gap-1">
                         <TargetIcon className="size-3" /> DEX {npc.dexterity}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <ShieldIcon className="size-3" /> CON {npc.constitution}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <ZapIcon className="size-3" /> LCK {npc.luck}
                     </span>
                     <span className="flex items-center gap-1">
                         <HeartIcon className="size-3" /> HP {npc.maxHealth}

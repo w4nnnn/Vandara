@@ -8,9 +8,17 @@ export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['weapon', 'armor', 'accessory',
 export interface CombatBonus {
   attack?: number
   defense?: number
-  speed?: number
   dexterity?: number
+  strength?: number
+  constitution?: number
+  intelligence?: number
+  wisdom?: number
+  charisma?: number
+  luck?: number
+  perception?: number
   maxHp?: number
+  critChance?: number
+  dodgeChance?: number
 }
 
 export function getEquipmentBonuses(player: {

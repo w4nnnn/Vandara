@@ -7,6 +7,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AVATAR_OPTIONS, type AvatarOptionKey } from '@/lib/game/constants'
 import { applyRegen } from '@/lib/game/regen'
+import { calculateDerivedStats, checkSynergies, calculateMaxStats } from '@/lib/game/utils/stats'
+import type { DerivedStats, ActiveSynergy } from '@/lib/game/types'
 
 const AVATAR_KEYS: AvatarOptionKey[] = [
   'topType', 'accessoriesType', 'hatColor', 'hairColor',
@@ -212,6 +214,49 @@ export async function getPlayer() {
     where: eq(playerAvatars.playerId, playerId),
   })
 
+  // Calculate max stats from base stats with level-based scaling
+  const baseStats = {
+    strength: player.strength,
+    dexterity: player.dexterity,
+    constitution: player.constitution,
+    intelligence: player.intelligence,
+    wisdom: player.wisdom,
+    charisma: player.charisma,
+    luck: player.luck,
+    perception: player.perception,
+    level: player.level,
+  }
+  const maxStats = calculateMaxStats(baseStats)
+
+  // Update max stats in database if they differ from calculated values
+  const needsMaxStatsUpdate = 
+    player.maxHealth !== maxStats.maxHealth ||
+    player.maxEnergy !== maxStats.maxEnergy ||
+    player.maxNerve !== maxStats.maxNerve ||
+    player.maxHappy !== maxStats.maxHappy
+
+  if (needsMaxStatsUpdate) {
+    await db
+      .update(players)
+      .set({
+        maxHealth: maxStats.maxHealth,
+        maxEnergy: maxStats.maxEnergy,
+        maxNerve: maxStats.maxNerve,
+        maxHappy: maxStats.maxHappy,
+        updatedAt: new Date(),
+      })
+      .where(eq(players.id, player.id))
+
+    player.maxHealth = maxStats.maxHealth
+    player.maxEnergy = maxStats.maxEnergy
+    player.maxNerve = maxStats.maxNerve
+    player.maxHappy = maxStats.maxHappy
+  }
+
+  // Calculate derived stats from base stats
+  const derivedStats: DerivedStats = calculateDerivedStats(baseStats)
+  const activeSynergies: ActiveSynergy[] = checkSynergies(baseStats)
+
   return {
     ...player,
     money: Number(player.money),
@@ -227,6 +272,8 @@ export async function getPlayer() {
     travelingTo,
     travelingUntil,
     avatar,
+    derivedStats,
+    activeSynergies,
   }
 }
 

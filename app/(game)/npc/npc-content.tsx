@@ -28,9 +28,13 @@ type Player = {
     health: number
     maxHealth: number
     strength: number
-    defense: number
-    speed: number
     dexterity: number
+    constitution: number
+    intelligence: number
+    wisdom: number
+    charisma: number
+    luck: number
+    perception: number
     isHospitalized: boolean
     hospitalUntil: Date | null
     currentLocation: string
