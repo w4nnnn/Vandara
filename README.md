@@ -20,17 +20,16 @@ real estate empire.
 - **Battle Stats** — Train Strength, Defense, Speed, and Dexterity through
   12 gym exercises across 3 intensity tiers.
 
-### Combat
+### Combat & Interaction
 
-- **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs.
-  Every hour brings new enemies with unique stats, names, and appearances.
+- **Dynamic NPC System** — Fight time-seeded, procedurally generated NPCs present in all 5 locations. Location matters: gym bros are stronger, downtown folks are richer, and dark alley thugs carry more weapons.
+- **NPC Equipment** — Enemies can probabilistically generate carrying Weapons, Armor, and Accessories, granting them significant hidden stat boosts requiring players to adapt.
 - **Turn-based PvE** — Choose between Attack, Heavy Attack, Defend, or Flee.
   Combat factors in all four stats for hit chance, damage, and crits.
-- **Hospitalization** — Lose a fight and you're hospitalized with a recovery
-  timer. All activities are blocked until release.
+- **Pickpocket System** — Test your DEX and SPD against NPCs to steal their money without fighting. Costs Nerve, rewards cash on success, but immediately triggers severe damage and potential hospitalization if caught!
+- **Hospitalization** — Lose a fight or get caught pickpocketing with low HP, and you're hospitalized with a recovery timer. All activities are blocked until release.
 
-### Scavenging
-
+- **Integrated Scavenging & Tool Center** — A consolidated UI allowing seamless switching between Scavenging drops and Tool Management (equipping flashlights, metal detectors).
 - **5 Location Loot Tables** — City Center (cash and consumables), Gym
   District (protein and energy), Business District (valuables), Dark Alley
   (materials and weapons), Hospital (medical supplies).
@@ -49,9 +48,11 @@ real estate empire.
 - **Scavenge Logs** — The last 15 actions are recorded in the database and
   displayed in a timeline view.
 
-### Recycling & Crafting
+### Inventory, Equipment & Crafting
 
-Turn junk into useful items through 6 recipes, each gated by scavenge level:
+- **Equipment System** — Equip Weapons, Armor, and Accessories to boost your base combat stats independently.
+- **Integrated Crafting Center** — Effortlessly switch between your Backpack inventory and the Crafting/Recycling bench within the same menu.
+- **Recycling** — Turn junk into useful items through 6 recipes, each gated by scavenge level:
 
 | Recipe             | Level | Inputs                                   | Output         |
 |--------------------|-------|------------------------------------------|----------------|
